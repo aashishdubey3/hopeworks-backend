@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HopeWorks - A Platform for NGOs</title>
+    <!-- 1. Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Load React & ReactDOM -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <!-- 3. Load Babel to transpile JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Razorpay Checkout Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <style>
+        /* Base styles */
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8f8f0; color: #4A5D23; }
+        /* Custom styles */
+        .cause { font-size: 0.9em; color: #555; font-style: italic; }
+        .progress-bar { background-color: #e9ede4; border-radius: 30px; margin: 10px 0; height: 15px; overflow: hidden; }
+        .progress { background-color: #6B8E23; height: 100%; border-radius: 30px; }
+        .progress-text { font-size: 0.9em; font-weight: bold; text-align: center; margin-top: -15px; }
+        .event-date { background-color: #4A5D23; color: #fff; border-radius: 8px; padding: 15px; text-align: center; min-width: 80px; }
+        .event-date .month { display: block; font-size: 0.9em; font-weight: bold; }
+        .event-date .day { display: block; font-size: 2em; font-weight: bold; line-height: 1.1; }
+        .announcement-item { background-color: #ffffff; border-left: 4px solid #6B8E23; padding: 15px 20px; margin-bottom: 15px; border-radius: 0 5px 5px 0; }
+        .announcement-date { font-size: 0.9em; font-weight: bold; color: #555; margin-bottom: 5px; }
+        /* Simple scrollbar */
+        .dashboard-list::-webkit-scrollbar { width: 8px; }
+        .dashboard-list::-webkit-scrollbar-track { background: #e9ede4; border-radius: 4px; }
+        .dashboard-list::-webkit-scrollbar-thumb { background: #6B8E23; border-radius: 4px; }
+        .dashboard-list::-webkit-scrollbar-thumb:hover { background: #4A5D23; }
+        /* Style for file input */
+        input[type="file"] { border: 1px solid #ccc; padding: 6px; border-radius: 4px; background-color: white; }
+        input[type="file"]::file-selector-button { margin-right: 8px; border: none; background: #6B8E23; padding: 6px 10px; border-radius: 4px; color: #fff; cursor: pointer; transition: background .2s ease-in-out; }
+        input[type="file"]::file-selector-button:hover { background: #4A5D23; }
+        /* Image preview */
+        .image-preview { max-width: 100px; max-height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #e9ede4; margin-top: 5px; }
+        .campaign-image-preview { max-width: 200px; max-height: 120px; border-radius: 8px; object-fit: cover; border: 1px solid #ccc; margin-top: 5px; }
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #6B8E23;
+            margin: 20px auto;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Custom button variant for Danger */
+        .btn-danger {
+            background-color: #dc2626; /* red-600 */
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c; /* red-700 */
+        }
+    </style>
+</head>
+<body class="max-w-4xl mx-auto p-5">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+
+        const { useState, useEffect, createContext, useContext, useRef } = React;
+        // NOTE: This URL assumes your server is running on localhost:5000
+        // You might need to change this if you deploy your backend
+        const API_BASE_URL = 'http://localhost:5000';
+        const API_URL = `${API_BASE_URL}/api`;
+        const RAZORPAY_KEY_ID_FRONTEND = 'rzp_test_RXe8cwJVgzxVNr';
+
+        // --- Navigation Context ---
+        const NavigationContext = createContext();
+        function useNavigation() { return useContext(NavigationContext); }
+
+        // --- Reusable Components ---
+        function Header() {
+            const { navigate, loggedInNgo, setLoggedInNgo } = useNavigation();
+            const [dropdownOpen, setDropdownOpen] = useState(false);
+            const handleLogout = () => { localStorage.removeItem('loggedInNgoId'); setLoggedInNgo(null); navigate('home'); };
+            return (
+                <header className="flex flex-col sm:flex-row justify-between items-center border-b border-gray-300 mb-10 pb-5">
+                    <h1 className="text-3xl font-bold text-[#3D402D] mb-4 sm:mb-0"><a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }}>HopeWorks Platform</a></h1>
+                    <nav><ul className="flex items-center gap-2 sm:gap-4">
+                        <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="p-2 rounded-md hover:bg-[#e9ede4]">Home</a></li>
+                        <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('ngos'); }} className="p-2 rounded-md hover:bg-[#e9ede4]">Find NGOs</a></li>
+                        <li className="relative">
+                            <button onClick={() => setDropdownOpen(!dropdownOpen)} className="p-2 rounded-md hover:bg-[#e9ede4]">Events, News & Campaigns ▾</button>
+                            {dropdownOpen && ( <div className="absolute left-0 mt-2 w-52 bg-[#fdfdf5] border border-gray-300 rounded-lg shadow-lg z-10">
+                                <a href="#" onClick={(e) => { e.preventDefault(); navigate('news'); setDropdownOpen(false); }} className="block px-4 py-2 hover:bg-[#e9ede4]">Latest News</a>
+                                <a href="#" onClick={(e) => { e.preventDefault(); navigate('events'); setDropdownOpen(false); }} className="block px-4 py-2 hover:bg-[#e9ede4]">Upcoming Events</a>
+                                <a href="#" onClick={(e) => { e.preventDefault(); navigate('all-campaigns'); setDropdownOpen(false); }} className="block px-4 py-2 hover:bg-[#e9ede4]">All Campaigns</a>
+                            </div>)}
+                        </li>
+                        {loggedInNgo ? (<>
+                            <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('ngo-dashboard'); }} className="p-2 rounded-md hover:bg-[#e9ede4]">Dashboard</a></li>
+                            <li><button onClick={handleLogout} className="p-2 rounded-md text-red-600 hover:bg-[#e9ede4]">Logout</button></li>
+                        </>) : (<li><a href="#" onClick={(e) => { e.preventDefault(); navigate('donate', {}); }} className="px-4 py-2 rounded-md bg-[#6B8E23] text-white hover:bg-[#4A5D23]">Donate</a></li>)}
+                    </ul></nav>
+                </header>
+            );
+        }
+        function Footer() {
+            const { navigate, loggedInNgo } = useNavigation();
+            return (
+                <footer className="text-center mt-12 pt-5 border-t border-gray-300 text-gray-600">
+                    <div className="flex justify-center flex-wrap gap-4 md:gap-6 mb-4">
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('about'); }} className="font-bold text-[#4A5D23]">About Us</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('contact'); }} className="font-bold text-[#4A5D23]">Contact Us</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('admin'); }} className="font-bold text-[#4A5D23]">Admin</a>
+                        {!loggedInNgo && (<a href="#" onClick={(e) => { e.preventDefault(); navigate('ngo-login'); }} className="font-bold text-[#4A5D23]">NGO Login</a>)}
+                    </div>
+                    <p>&copy; 2025 HopeWorks Platform. All Rights Reserved.</p>
+                </footer>
+            );
+        }
+        function Layout({ children }) { return (<><Header /><main>{children}</main><Footer /></>); }
+        function Button({ children, onClick, type = 'button', variant = 'primary', className = '', disabled = false }) {
+            const baseStyles = "inline-flex items-center justify-center px-6 py-3 rounded-md transition-colors";
+            let variantStyles = '';
+            switch(variant) {
+                case 'secondary':
+                    variantStyles = 'bg-transparent text-[#6B8E23] border border-[#6B8E23] hover:bg-[#e9ede4]';
+                    break;
+                case 'danger':
+                    variantStyles = 'bg-red-600 text-white hover:bg-red-700';
+                    break;
+                default: // primary
+                    variantStyles = 'bg-[#6B8E23] text-white hover:bg-[#4A5D23]';
+            }
+            return (<button type={type} onClick={onClick} className={`${baseStyles} ${variantStyles} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={disabled}>{children}</button>);
+        }
+        function FormInput({ label, type = 'text', value, onChange, name, required, disabled, children, hint, accept }) {
+            const inputProps = { value: type !== 'file' ? value : undefined, onChange, name, required, disabled, accept, className: "w-full p-3 border border-gray-300 rounded-md mt-1 disabled:bg-gray-100" };
+             const fileInputClasses = "w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#6B8E23] hover:file:bg-violet-100 disabled:opacity-50 disabled:pointer-events-none";
+            return (<p><label className="font-bold block mb-1">{label}:</label>{ type === 'textarea' ? (<textarea {...inputProps} rows="4"></textarea>) : type === 'select' ? (<select {...inputProps}>{children}</select>) : type === 'file' ? (<input type="file" {...inputProps} className={fileInputClasses} />) : (<input type={type} {...inputProps} />)}{hint && <span className="text-sm text-gray-500 block mt-1">{hint}</span>}</p>);
+        }
+        function DashboardCard({ title, list, renderItem, className = '' }) {
+            return (<div className={`bg-white p-6 rounded-lg border border-gray-300 ${className}`}> <h3 className="text-xl font-bold mb-4 pb-2 border-b border-gray-200">{title}</h3> <ul className="space-y-3 max-h-64 overflow-y-auto dashboard-list pr-2">{Array.isArray(list) && list.length > 0 ? (list.map((item, index) => (<li key={item?.id || index} className="pb-2 border-b border-gray-100 last:border-b-0">{renderItem(item)}</li>))) : (<li>No data yet.</li>)}</ul></div>);
+        }
+        function Spinner({ primary = true }) {
+            const color = primary ? 'text-white' : 'text-[#6B8E23]';
+            return (
+                <svg className={`animate-spin -ml-1 mr-3 h-5 w-5 ${color}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            );
+        }
+
+        // --- Helper Function ---
+        function findNgoByName(ngoList, name) {
+            if (!Array.isArray(ngoList)) return undefined;
+            return ngoList.find(ngo => ngo && ngo.name === name);
+        }
+
+        // --- Helper: Construct full image URL ---
+        function getImageUrl(relativePath) {
+            if (!relativePath) { return 'https://placehold.co/100x100/eee/aaa?text=No+Image'; }
+            // If it's already a full URL (e.g., from placehold.co or an external link), use it directly
+            if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) { return relativePath; }
+            // Otherwise, construct it from the base URL
+            return `${API_BASE_URL}${relativePath}`;
+        }
+
+        // --- Helper: Format date for forms (YYYY-MM-DD) ---
+        function formatDateForInput(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toISOString().split('T')[0];
+        }
+
+
+        // --- Page Components ---
+
+        // --- HomePage ---
+        function HomePage() {
+            const { navigate } = useNavigation();
+            const [campaigns, setCampaigns] = useState([]); const [campaignsLoading, setCampaignsLoading] = useState(true); const [campaignsError, setCampaignsError] = useState(null);
+            const [featuredNgos, setFeaturedNgos] = useState([]); const [featuredNgosLoading, setFeaturedNgosLoading] = useState(true); const [featuredNgosError, setFeaturedNgosError] = useState(null);
+            const [allNgos, setAllNgos] = useState([]);
+            const isMounted = useRef(true);
+
+            useEffect(() => {
+                isMounted.current = true;
+                setCampaignsLoading(true); setFeaturedNgosLoading(true); setCampaignsError(null); setFeaturedNgosError(null);
+                const fetchCampaigns = fetch(API_URL + '/campaigns').then(res => res.ok ? res.json() : Promise.reject('Failed campaign fetch'));
+                const fetchAllNgos = fetch(API_URL + '/ngos').then(res => res.ok ? res.json() : Promise.reject('Failed NGO fetch'));
+                const fetchFeaturedNgos = fetch(API_URL + '/ngos/featured').then(res => res.ok ? res.json() : Promise.reject('Failed featured NGO fetch'));
+
+                Promise.all([fetchCampaigns, fetchAllNgos, fetchFeaturedNgos])
+                    .then(([campaignData, allNgoData, featuredNgoData]) => {
+                        if (isMounted.current) {
+                            setCampaigns(campaignData.slice(0, 2)); setAllNgos(allNgoData); setFeaturedNgos(featuredNgoData);
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Failed homepage data fetch:", err);
+                        const errorMsg = (err instanceof TypeError && err.message === 'Failed to fetch') ? 'Connection Error: Could not reach the server.' : `Error loading data: ${err.message}`;
+                        if (isMounted.current) {
+                            setCampaignsError(errorMsg); setFeaturedNgosError(errorMsg);
+                        }
+                    })
+                    .finally(() => {
+                        if (isMounted.current) {
+                            setCampaignsLoading(false); setFeaturedNgosLoading(false);
+                        }
+                    });
+                
+                return () => { isMounted.current = false; };
+            }, []);
+
+            return (
+                <div>
+                    <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12"><h2 className="text-4xl font-bold mb-4">Amplify Your Impact.</h2><p className="text-lg mb-6">Discover and support trusted NGOs.</p><Button onClick={() => navigate('ngos')}>Find an NGO</Button></section>
+                    <section className="mb-12">
+                        <h2 className="text-3xl font-bold mb-6 text-center">Organizations Spotlight</h2>
+                        {featuredNgosLoading && <p className="text-center">Loading organizations...</p>}
+                        {featuredNgosError && <p className="text-center text-red-600">{featuredNgosError}</p>}
+                        {!featuredNgosLoading && !featuredNgosError && (
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {Array.isArray(featuredNgos) && featuredNgos.length > 0 ? (
+                                    featuredNgos.map(ngo => (
+                                        <article key={ngo.id} className="border border-gray-300 p-5 rounded-lg text-center bg-white">
+                                            <img src={getImageUrl(ngo.logo)} alt={`${ngo.name} Logo`} className="w-20 h-20 rounded-full object-cover mx-auto mb-4"/>
+                                            <h3 className="text-2xl font-bold">{ngo.name}</h3>
+                                            <p className="cause">{ngo.cause}</p>
+                                            <p className="my-4 text-gray-700">Focusing on {ngo.cause.toLowerCase()}.</p>
+                                            <Button onClick={() => navigate('profile', { id: ngo.id })} variant="secondary">View Profile</Button>
+                                        </article>
+                                    ))
+                                ) : ( <p className="col-span-full text-center">No organizations to spotlight.</p> )}
+                            </div>
+                        )}
+                    </section>
+                    <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12">
+                        <h2 className="text-3xl font-bold mb-4">Active Campaigns</h2><p className="mb-6">Support time-sensitive projects.</p>
+                        {campaignsLoading && <p>Loading campaigns...</p>}
+                        {campaignsError && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-left max-w-lg mx-auto" role="alert"><strong className="font-bold">Error: </strong><span className="block sm:inline">{campaignsError}</span></div>)}
+                        {!campaignsLoading && !campaignsError && (<>
+                            <div className="grid md:grid-cols-2 gap-6 bg-white p-6 rounded-lg mt-4">
+                                {Array.isArray(campaigns) && campaigns.length > 0 ? (campaigns.map(campaign => { const progressPercent = campaign.goalAmount > 0 ? Math.min(100, Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)) : 0; const hostingNgo = findNgoByName(allNgos, campaign.host); return (<article key={campaign.id} className="campaign-card text-left"><img src={getImageUrl(campaign.imageUrl)} alt={campaign.title} className="w-full h-48 object-cover rounded-lg mb-4" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x400/eee/aaa?text=Error'; }}/><h3 className="text-2xl font-bold">{campaign.title}</h3><p className="text-sm text-gray-600 mb-2">by {campaign.host}</p><p className="my-2">{campaign.description}</p><div className="progress-bar"><div className="progress" style={{width: `${progressPercent}%`}}></div></div><p className="progress-text"><strong>₹{(campaign.raisedAmount || 0).toLocaleString('en-IN')}</strong> raised of ₹{campaign.goalAmount.toLocaleString('en-IN')} goal</p>
+                                    <Button onClick={() => navigate('donate', { ngo: hostingNgo, campaignId: campaign.id })} variant="primary" className="mt-4" disabled={!hostingNgo}>Donate to {campaign.host}</Button>
+                                    {!hostingNgo && <p className="text-xs text-red-500 mt-1">Donation link unavailable</p>}
+                                </article>); })) : (<p className="col-span-full">No featured campaigns.</p>)}
+                            </div>
+                            <Button onClick={() => navigate('all-campaigns')} variant="secondary" className="mt-6">View All Campaigns</Button>
+                        </>)}
+                    </section>
+                    <section className="cta-banner bg-[#e9ede4] p-10 rounded-lg text-center mb-12"><h2 className="text-3xl font-bold mb-4">Are you an NGO?</h2><p className="text-lg mb-6">Join our network.</p><Button onClick={() => navigate('register')}>Register Now</Button></section>
+                </div>
+            );
+        }
+
+        // --- NgoListPage ---
+        function NgoListPage() {
+            const { navigate } = useNavigation();
+            const [ngos, setNgos] = useState([]); const [searchTerm, setSearchTerm] = useState(''); const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
+            useEffect(() => { fetch(API_URL + '/ngos').then(res => res.json()).then(data => { setNgos(data); setLoading(false); }).catch(err => { console.error(err); setError('Could not load NGOs.'); setLoading(false); }); }, []);
+            const filteredNgos = Array.isArray(ngos) ? ngos.filter(ngo => ngo.name.toLowerCase().includes(searchTerm.toLowerCase()) || ngo.cause.toLowerCase().includes(searchTerm.toLowerCase())) : [];
+            return (
+                <div>
+                    <section className="mb-8"> <h2 className="text-3xl font-bold mb-4">Find an Organization</h2> <input type="text" id="ngoSearch" placeholder="Search by name or cause" className="w-full p-3 border border-gray-300 rounded-md" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /> </section>
+                    <section className="ngo-directory">
+                        {loading && <p className="text-center">Loading NGOs...</p>}
+                        {error && <p className="text-center text-red-600">{error}</p>}
+                        {!loading && !error && ( <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredNgos.length > 0 ? ( filteredNgos.map(ngo => (<article key={ngo.id} className="border border-gray-300 p-5 rounded-lg text-center bg-white"><img src={getImageUrl(ngo.logo)} alt={`${ngo.name} Logo`} className="w-20 h-20 rounded-full object-cover mx-auto mb-4"/><h3 className="text-2xl font-bold">{ngo.name}</h3><p className="cause">{ngo.cause}</p><p className="text-sm text-gray-500 mt-2 truncate">{ngo.address}</p><div className="mt-4"><Button onClick={() => navigate('profile', { id: ngo.id })} variant="secondary">View Profile</Button></div></article>))) : (<p className="text-center col-span-full">No NGOs match your search.</p>)}
+                        </div>)}
+                    </section>
+                </div>
+            );
+        }
+
+        // --- ProfilePage ---
+        function ProfilePage({ ngoId }) {
+            const { navigate } = useNavigation();
+            const [ngo, setNgo] = useState(null); const [loading, setLoading] = useState(true); const [error, setError] = useState(null); const [ngoEvents, setNgoEvents] = useState([]); const [ngoNews, setNgoNews] = useState([]); const [ngoCampaigns, setNgoCampaigns] = useState([]); const [relatedDataLoading, setRelatedDataLoading] = useState(true);
+            useEffect(() => { setLoading(true); setRelatedDataLoading(true); setError(null); const fetchNgoData = fetch(`${API_URL}/ngos/${ngoId}`).then(res => { if (!res.ok) throw new Error('NGO not found'); return res.json(); }); const fetchEvents = fetch(`${API_URL}/ngos/${ngoId}/events`).then(res => res.json()); const fetchNews = fetch(`${API_URL}/ngos/${ngoId}/news`).then(res => res.json()); const fetchCampaigns = fetch(`${API_URL}/ngos/${ngoId}/campaigns`).then(res => res.json()); Promise.all([fetchNgoData, fetchEvents, fetchNews, fetchCampaigns]).then(([ngoData, eventsData, newsData, campaignsData]) => { setNgo(ngoData); setNgoEvents(eventsData); setNgoNews(newsData); setNgoCampaigns(campaignsData); setLoading(false); setRelatedDataLoading(false); }).catch(err => { console.error("Error fetching profile data:", err); setError(err.message || 'Could not load profile info.'); setLoading(false); setRelatedDataLoading(false); }); }, [ngoId]);
+            if (loading) return <p className="text-center">Loading profile...</p>; if (error) return <p className="text-center text-red-600">Error: {error}</p>; if (!ngo) return null;
+            const formatDate = (dateString) => { const date = new Date(dateString); return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); };
+            const getDirectionsLink = () => { if (ngo && ngo.address) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ngo.address)}`; } return '#'; };
+
+            return (
+                <div>
+                    <section className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-white rounded-lg border border-gray-300 mb-8"><img id="profile-logo" src={getImageUrl(ngo.logo)} alt={`${ngo.name} Logo`} className="w-32 h-32 rounded-full object-cover"/><div><h2 id="profile-name" className="text-4xl font-bold">{ngo.name}</h2><p className="cause text-2xl" id="profile-cause">{ngo.cause}</p></div></section>
+                    <div className="grid md:grid-cols-3 gap-8">
+                        <div className="md:col-span-2 space-y-8">
+                            <section className="bg-white p-6 rounded-lg border border-gray-300"><h3 className="text-2xl font-bold mb-4">About Us</h3><p id="profile-description" className="text-lg leading-relaxed">{ngo.description}</p></section>
+                            <section className="bg-white p-6 rounded-lg border border-gray-300"><h3 className="text-2xl font-bold mb-4">Active Campaigns</h3>{relatedDataLoading ? (<p>Loading campaigns...</p>) : Array.isArray(ngoCampaigns) && ngoCampaigns.length > 0 ? ( <div className="space-y-6">{ngoCampaigns.map(campaign => { const progressPercent = campaign.goalAmount > 0 ? Math.min(100, Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)) : 0; return (<article key={campaign.id} className="campaign-card text-left border-b pb-4 last:border-b-0"><img src={getImageUrl(campaign.imageUrl)} alt={campaign.title} className="w-full h-40 object-cover rounded-lg mb-3" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x400/eee/aaa?text=Error'; }}/><h4 className="text-xl font-bold">{campaign.title}</h4><p className="my-1 text-gray-700">{campaign.description}</p><div className="progress-bar my-1"><div className="progress" style={{width: `${progressPercent}%`}}></div></div><p className="progress-text"><strong>₹{(campaign.raisedAmount || 0).toLocaleString('en-IN')}</strong> of ₹{campaign.goalAmount.toLocaleString('en-IN')} goal</p>
+                                <Button onClick={() => navigate('donate', { ngo: ngo, campaignId: campaign.id })} variant="secondary" className="mt-2 py-1 px-3 text-sm">Donate Now</Button>
+                            </article>); })}</div>) : (<p>No active campaigns.</p>)}</section>
+                            <section className="bg-white p-6 rounded-lg border border-gray-300"><h3 className="text-2xl font-bold mb-4">Upcoming Events</h3>{relatedDataLoading ? (<p>Loading events...</p>) : Array.isArray(ngoEvents) && ngoEvents.length > 0 ? (<ul className="space-y-4">{ngoEvents.map(event => (<li key={event.id} className="pb-3 border-b last:border-b-0"><p className="font-bold text-lg">{event.title}</p><p className="text-sm text-gray-600 mb-1">Date: {formatDate(event.date)}</p><p>{event.description}</p></li>))}</ul>) : (<p>No upcoming events.</p>)}</section>
+                            <section className="bg-white p-6 rounded-lg border border-gray-300"><h3 className="text-2xl font-bold mb-4">Latest News</h3>{relatedDataLoading ? (<p>Loading news...</p>) : Array.isArray(ngoNews) && ngoNews.length > 0 ? (<ul className="space-y-4">{ngoNews.map(item => (<li key={item.id} className="pb-3 border-b last:border-b-0"><p className="font-bold text-lg">{item.title}</p><p className="text-sm text-gray-600 mb-1">Posted: {formatDate(item.date)}</p><p>{item.content}</p></li>))}</ul>) : (<p>No recent news.</p>)}</section>
+                        </div>
+                        <aside className="md:col-span-1 space-y-8">
+                            <div className="bg-white p-6 rounded-lg border border-gray-300 h-fit">
+                                <h3 className="text-2xl font-bold mb-4">Contact & Location</h3>
+                                <p className="mb-2"><strong>Email:</strong> <span id="profile-email">{ngo.email}</span></p>
+                                {ngo.phone && <p className="mb-2"><strong>Phone:</strong> <span id="profile-phone">{ngo.phone}</span></p>}
+                                {ngo.address && <p className="mb-2"><strong>Address:</strong> <span id="profile-address">{ngo.address}</span></p>}
+                                {ngo.address && ( <a href={getDirectionsLink()} target="_blank" rel="noopener noreferrer" className="text-sm text-[#6B8E23] hover:underline mb-4 inline-block"> Get Directions &rarr; </a> )}
+                                <p className="text-sm text-gray-500 mb-4">Use the link above to find us on Google Maps.</p>
+                                {ngo.upiId ? (<Button onClick={() => navigate('donate', { ngo: ngo })} variant="primary" className="w-full text-center mt-4">Donate to {ngo.name}</Button>) : (<Button onClick={() => navigate('donate', {})} variant="primary" className="w-full text-center mt-4">Donate to HopeWorks</Button>)}
+                            </div>
+                         </aside>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- EventsPage ---
+        function EventsPage() {
+             const [events, setEvents] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
+             useEffect(() => { setLoading(true); setError(null); fetch(API_URL + '/events').then(res => { if (!res.ok) throw new Error('Failed to fetch events'); return res.json(); }).then(data => { setEvents(data); setLoading(false); }).catch(err => { console.error(err); setError(err.message || 'Could not load events.'); setLoading(false); }); }, []);
+            return ( <div> <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12"> <h2 className="text-4xl font-bold mb-4">Upcoming Events</h2> <p className="text-lg">Find workshops, fundraisers, and community drives.</p> </section> <section className="event-list space-y-6"> {loading && <p className="text-center">Loading events...</p>} {error && <p className="text-center text-red-600">{error}</p>} {!loading && !error && ( Array.isArray(events) && events.length > 0 ? ( events.map(event => { const date = new Date(event.date); const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase(); const day = date.getDate(); return ( <article key={event.id} className="event-item flex items-center gap-6 bg-white p-5 rounded-lg border border-gray-300"> <div className="event-date"> <span className="month">{month}</span> <span className="day">{day}</span> </div> <div className="event-details"> <h3 className="text-2xl font-bold">{event.title}</h3> <p><strong>Hosted by:</strong> {event.host}</p> <p>{event.description}</p> </div> </article> ); }) ) : (<p className="text-center col-span-full">No upcoming events.</p>) )} </section> </div> );
+         }
+
+        // --- NewsPage ---
+        function NewsPage() {
+            const [news, setNews] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
+             useEffect(() => { setLoading(true); setError(null); fetch(API_URL + '/news').then(res => { if (!res.ok) throw new Error('Failed to fetch news'); return res.json(); }).then(data => { setNews(data); setLoading(false); }).catch(err => { console.error(err); setError(err.message || 'Could not load news.'); setLoading(false); }); }, []);
+            const formatDate = (dateString) => { const date = new Date(dateString); return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); };
+            return ( <div> <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12"> <h2 className="text-4xl font-bold mb-4">Latest News & Announcements</h2> <p className="text-lg">Updates and success stories from NGOs.</p> </section> <div className="announcement-list space-y-4"> {loading && <p className="text-center">Loading news...</p>} {error && <p className="text-center text-red-600">{error}</p>} {!loading && !error && ( Array.isArray(news) && news.length > 0 ? ( news.map(item => ( <article key={item.id} className="announcement-item"> <p className="announcement-date">{formatDate(item.date)}</p> <h3 className="text-xl font-bold">{item.title} (from {item.host})</h3> <p>{item.content}</p> </article> )) ) : (<p className="text-center">No news yet.</p>) )} </div> </div> );
+        }
+
+        // --- AboutPage ---
+        function AboutPage() {
+            const [name, setName] = useState(''); const [email, setEmail] = useState(''); const [submitted, setSubmitted] = useState(false); const { navigate } = useNavigation();
+            const [isLoading, setIsLoading] = useState(false);
+            const isMounted = useRef(true);
+            useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsLoading(true);
+                try {
+                    const response = await fetch(API_URL + '/volunteers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email }), });
+                    if (isMounted.current) {
+                        if (response.ok) { setSubmitted(true); } else { alert('Error submitting registration.'); }
+                    }
+                } catch (error) { console.error('Volunteer submit fail:', error); if (isMounted.current) alert('Could not connect.'); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+            return ( <div> <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12"><h2 className="text-4xl font-bold mb-4">From a Single Hand to a Thousand Helpers.</h2><p className="text-lg">Our mission: connect impactful NGOs with supporters like you.</p></section> <section className="mb-12 bg-white p-6 rounded-lg border border-gray-300"><h3 className="text-3xl font-bold mb-4">Our Story</h3><p className="mb-4">HopeWorks started small, realizing many NGOs struggled for visibility.</p><p>We built this platform as a bigger table, where every NGO has a voice and every supporter finds a cause.</p></section> <section className="cta-banner bg-[#e9ede4] p-10 rounded-lg text-center mb-12"><h2 className="text-3xl font-bold mb-4">Volunteer with HopeWorks Directly</h2><p className="text-lg mb-6">Inspired? Join our core team.</p>{submitted ? (<div className="text-center p-6 bg-white rounded-lg"><h3 className="text-2xl font-bold text-green-600">Thank you!</h3><p>We'll contact you soon.</p></div>) : (<form onSubmit={handleSubmit} className="max-w-lg mx-auto bg-white p-6 rounded-lg text-left space-y-4"><FormInput label="Your Name" type="text" value={name} onChange={e => setName(e.target.value)} required disabled={isLoading}/><FormInput label="Your Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isLoading}/><Button type="submit" variant="primary" disabled={isLoading}>{isLoading ? <><Spinner /> Sending...</> : 'I Want to Join!'}</Button></form>)}</section> <section className="home-campaigns text-center p-8 bg-white rounded-lg border border-gray-300"><h2 className="text-3xl font-bold mb-4">Support Our Work</h2><p className="mb-6">Help us continue our mission. Every contribution makes a difference.</p><Button onClick={() => navigate('donate', {})}>Donate Now</Button></section> </div> );
+        }
+
+        // --- ContactPage ---
+        function ContactPage() {
+            const [name, setName] = useState(''); const [email, setEmail] = useState(''); const [message, setMessage] = useState(''); const [submitted, setSubmitted] = useState(false); const [error, setError] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const isMounted = useRef(true);
+            useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setIsLoading(true);
+                try {
+                    const response = await fetch(API_URL + '/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, message }), });
+                    if (isMounted.current) {
+                        if (response.ok) { setSubmitted(true); } else { setError('Error sending message.'); }
+                    }
+                } catch (err) { console.error('Contact submit fail:', err); if(isMounted.current) setError('Could not connect.'); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+            if (submitted) { return (<section className="text-center p-10 bg-white rounded-lg border border-gray-300"><h3 className="text-3xl font-bold text-green-600 mb-4">Thank You!</h3><p className="text-lg">Message sent. We'll reply soon.</p></section>); }
+            return ( <div> <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300"> <h2 className="text-3xl font-bold mb-4">Contact HopeWorks Platform</h2><p className="mb-6">Questions, support, or partnerships? Use the form below.</p> <form onSubmit={handleSubmit} className="space-y-4"> {error && <p className="text-red-600 bg-red-100 p-3 rounded-md">{error}</p>} <FormInput label="Your Name" type="text" value={name} onChange={e => setName(e.target.value)} required disabled={isLoading}/> <FormInput label="Your Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isLoading}/> <FormInput label="Your Message" type="textarea" value={message} onChange={e => setMessage(e.target.value)} required disabled={isLoading}/> <Button type="submit" variant="primary" disabled={isLoading}>{isLoading ? <><Spinner /> Sending...</> : 'Send Message'}</Button> </form> </section> </div> );
+        }
+
+        // --- RegisterPage ---
+        function RegisterPage() {
+            const [formData, setFormData] = useState({ name: '', email: '', cause: 'Education', description: '', password: '', confirmPassword: '', address: '', phone: '' });
+            const [submitted, setSubmitted] = useState(false); const [error, setError] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const isMounted = useRef(true);
+            useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError('');
+                if (formData.password !== formData.confirmPassword) { setError('Passwords do not match.'); return; }
+                if (formData.password.length < 6) { setError('Password min 6 chars.'); return; }
+                if (!formData.address) { setError('Address is required.'); return; }
+                setIsLoading(true);
+                try {
+                    const { name, email, cause, description, password, address, phone } = formData;
+                    const response = await fetch(API_URL + '/ngos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, cause, description, password, address, phone }), });
+                    if (isMounted.current) {
+                        if (response.ok) { setSubmitted(true); }
+                        else { const err = await response.json(); setError(err.message || 'Error submitting.'); }
+                    }
+                } catch (err) { console.error('NGO submit fail:', err); if (isMounted.current) setError('Could not connect.'); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+            if (submitted) { return (<section className="text-center p-10 bg-white rounded-lg border border-gray-300"><h3 className="text-3xl font-bold text-green-600 mb-4">Thank You!</h3><p className="text-lg">Registration received. Admin review pending.</p></section>); }
+            return (<div><section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300"><h2 className="text-3xl font-bold mb-4">Join Our Network</h2><p className="mb-6">Register your organization.</p>
+                <form onSubmit={handleSubmit} className="registration-form space-y-4">
+                    {error && <p className="text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
+                    <FormInput label="Organization Name" name="name" type="text" value={formData.name} onChange={handleChange} required disabled={isLoading}/>
+                    <FormInput label="Contact Email" name="email" type="email" value={formData.email} onChange={handleChange} required disabled={isLoading}/>
+                    <FormInput label="Full Address" name="address" type="textarea" value={formData.address} onChange={handleChange} required hint="Used for map location." disabled={isLoading}/>
+                    <FormInput label="Phone Number (Optional)" name="phone" type="tel" value={formData.phone} onChange={handleChange} disabled={isLoading}/>
+                    <FormInput label="Primary Cause" name="cause" type="select" value={formData.cause} onChange={handleChange} disabled={isLoading}><option>Education</option> <option>Environment</option> <option>Healthcare</option> <option>Animal Welfare</option> <option>Other</option></FormInput>
+                    <FormInput label="Brief Mission Statement" name="description" type="textarea" value={formData.description} onChange={handleChange} disabled={isLoading}/>
+                    <FormInput label="Password" name="password" type="password" value={formData.password} onChange={handleChange} required hint="Min 6 chars" disabled={isLoading}/>
+                    <FormInput label="Confirm Password" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required disabled={isLoading}/>
+                    <Button type="submit" variant="primary" disabled={isLoading}>
+                         {isLoading ? <><Spinner /> Submitting...</> : 'Submit for Verification'}
+                    </Button>
+                </form>
+            </section></div>);
+        }
+
+        // --- DonatePage ---
+        function DonatePage({ ngo, campaignId }) {
+            const [step, setStep] = useState(1);
+            const defaultPayer = ngo?.name || 'HopeWorks Platform';
+            // This default UPI is for the platform itself if no specific NGO is selected
+            const defaultUpi = ngo?.upiId || 'Aashishdubey3708-1@okhdfcbank'; 
+            const [formData, setFormData] = useState({ name: '', email: '', amount: '500' });
+            const [certName, setCertName] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [paymentError, setPaymentError] = useState('');
+            const isMounted = useRef(true);
+            useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+
+            const displayRazorpay = async () => {
+                setIsLoading(true); setPaymentError('');
+                const amountValue = parseFloat(formData.amount);
+                if (isNaN(amountValue) || amountValue <= 0) { setPaymentError("Invalid amount."); setIsLoading(false); return; }
+                try {
+                    const orderResponse = await fetch(`${API_URL}/payment/order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: amountValue }), });
+                    if (!orderResponse.ok) { const errData = await orderResponse.json().catch(() => ({})); throw new Error(errData.message || 'Failed to create order.'); }
+                    const { success, order } = await orderResponse.json();
+                    if (!success || !order) { throw new Error('Invalid order response.'); }
+                    const options = {
+                        key: RAZORPAY_KEY_ID_FRONTEND, amount: order.amount, currency: order.currency,
+                        name: `Donate to ${defaultPayer}`, description: `Donation from ${formData.name}`, order_id: order.id,
+                        handler: async function (response) {
+                            if (!isMounted.current) return;
+                            setIsLoading(true); setStep(2);
+                            try {
+                                const verifyResponse = await fetch(`${API_URL}/payment/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ razorpay_order_id: response.razorpay_order_id, razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature, donorInfo: { name: formData.name, email: formData.email, amount: amountValue }, campaignId: campaignId || null, ngoId: ngo?.id || null }), });
+                                const verifyResult = await verifyResponse.json();
+                                if (isMounted.current) {
+                                    if (verifyResult.success) { console.log("Payment Verified"); setCertName(formData.name); setStep(3); }
+                                    else { throw new Error(verifyResult.message || "Verification failed."); }
+                                }
+                            } catch (verifyError) { console.error("Verification error:", verifyError); if (isMounted.current) { setPaymentError(`Verification failed: ${verifyError.message}.`); setStep(1); } }
+                            finally { if (isMounted.current) setIsLoading(false); }
+                        },
+                        prefill: { name: formData.name, email: formData.email },
+                        notes: { address: `Donation to ${defaultPayer}`, campaign_id: campaignId || 'general', ngo_id: ngo?.id || 'platform' },
+                        theme: { color: "#6B8E23" }
+                    };
+                    const paymentObject = new window.Razorpay(options);
+                    paymentObject.open();
+                    paymentObject.on('payment.failed', function (response) { console.error("Payment failed:", response.error); if (isMounted.current) setPaymentError(`Payment failed: ${response.error.description}`); });
+                } catch (error) { console.error('Payment init error:', error); if (isMounted.current) setPaymentError(`Payment init failed: ${error.message}`); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+            const handleFormSubmit = (e) => { e.preventDefault(); displayRazorpay(); };
+            const handleDownload = () => { const canvas = document.getElementById('ecert-canvas'); const ctx = canvas.getContext('2d'); const name = certName; const todayDate = new Date().toLocaleDateString(); ctx.fillStyle = '#f8f8f0'; ctx.fillRect(0, 0, 800, 500); ctx.fillStyle = '#3D402D'; ctx.font = 'bold 40px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Certificate of Appreciation', 400, 100); ctx.font = '30px system-ui, sans-serif'; ctx.fillText('Proudly Awarded to', 400, 200); ctx.font = 'italic bold 50px system-ui, sans-serif'; ctx.fillText(name, 400, 280); ctx.font = '20px system-ui, sans-serif'; ctx.fillText('For contribution to ' + defaultPayer + ' on ' + todayDate, 400, 400); const link = document.createElement('a'); link.download = 'HopeWorks-Cert.png'; link.href = canvas.toDataURL(); link.click(); };
+
+            return (
+                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    {step === 1 && ( <form onSubmit={handleFormSubmit} className="space-y-4"><h3 className="text-2xl font-bold">Donate to {defaultPayer || 'HopeWorks'}</h3>{paymentError && <p className="text-red-600 bg-red-100 p-3 rounded-md">{paymentError}</p>}<FormInput label="Full Name" name="name" type="text" value={formData.name} onChange={handleChange} required disabled={isLoading}/><FormInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required disabled={isLoading}/><FormInput label="Amount (₹)" name="amount" type="number" value={formData.amount} onChange={handleChange} required min="1" disabled={isLoading}/><Button type="submit" disabled={isLoading}>{isLoading ? <><Spinner /> Processing...</> : 'Proceed to Pay'}</Button></form> )}
+                    {step === 2 && ( <div className="text-center"><h4 className="text-2xl font-bold mb-4">Verifying Payment...</h4><div className="spinner"></div><p className="text-gray-600">Please wait, do not close this window.</p></div> )}
+                    {step === 3 && ( <div className="text-center"><h3 className="text-2xl font-bold mb-2 text-green-600">Payment Successful!</h3><p className="mb-4">Thank you!</p><h4 className="text-xl font-bold mb-4">Generate Certificate</h4><FormInput label="Name for Certificate" type="text" value={certName} onChange={e => setCertName(e.target.value)} /><canvas id="ecert-canvas" width="800" height="500" className="w-full border border-gray-300 my-4 bg-white"></canvas><Button onClick={handleDownload} variant="primary">Download Certificate</Button></div> )}
+                </section>
+            );
+        }
+
+        // --- AdminLoginPage ---
+        function AdminLoginPage() {
+            const { navigate } = useNavigation();
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [showHint, setShowHint] = useState(false);
+            const [isLoading, setIsLoading] = useState(false);
+            const isMounted = useRef(true);
+            useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setShowHint(false); setIsLoading(true);
+                try {
+                    const response = await fetch(API_URL + '/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+                    if (!response.ok) { const errData = await response.json().catch(() => ({})); throw new Error(errData.message || 'Incorrect password.'); }
+                    const result = await response.json();
+                    if (isMounted.current) {
+                        if (result.success) { sessionStorage.setItem('admin_logged_in', 'true'); navigate('admin-dashboard'); }
+                        else { setError(result.message || 'Incorrect password.'); }
+                    }
+                } catch (err) { console.error("Admin Login Error:", err); if (isMounted.current) { if (err instanceof TypeError && err.message === 'Failed to fetch') { setError('Could not connect to server.'); } else { setError(err.message || 'Login failed.'); } }
+                } finally { if (isMounted.current) setIsLoading(false); }
+            };
+
+            return (
+                <section className="max-w-md mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    <h2 className="text-3xl font-bold mb-4">Admin Access</h2> <p className="mb-6">Enter password to view dashboard.</p>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
+                        {showHint && <p className="text-blue-600 p-3 bg-blue-100 rounded-md">Hint: password is 'admin'</p>}
+                        <FormInput label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} required disabled={isLoading}/>
+                        <div className="flex justify-between items-center">
+                            <Button type="submit" variant="primary" disabled={isLoading}>
+                                {isLoading ? <><Spinner /> Logging in...</> : 'Login'}
+                            </Button>
+                            <a href="#" onClick={(e) => { e.preventDefault(); setShowHint(true); }} className="text-sm text-gray-600 hover:underline"> Forgot Password? </a>
+                        </div>
+                    </form>
+                </section>
+            );
+        }
+
+        // --- AdminDashboardPage ---
+        function AdminDashboardPage() {
+             const { navigate } = useNavigation();
+            // Initialize state with all keys from the /admin/data response
+            const [data, setData] = useState({ donors: [], volunteers: [], ngos: [], contactMessages: [], campaigns: [], events: [], news: [] });
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
+            const [isDeleting, setIsDeleting] = useState(null); // Tracks ID of item being deleted
+            const isMounted = useRef(true);
+
+            useEffect(() => {
+                isMounted.current = true;
+                return () => { isMounted.current = false; };
+            }, []);
+
+            const fetchData = () => {
+                if (!isMounted.current) return;
+                setLoading(true); setError('');
+                fetch(API_URL + '/admin/data')
+                    .then(res => {
+                        if (!res.ok) { throw new Error('Failed to fetch admin data'); }
+                        return res.json();
+                    })
+                    .then(adminData => {
+                        if (isMounted.current) {
+                            // Ensure all keys are populated, even if empty, to prevent map errors
+                            setData({
+                                donors: adminData.donors || [],
+                                volunteers: adminData.volunteers || [],
+                                ngos: adminData.ngos || [],
+                                contactMessages: adminData.contactMessages || [],
+                                campaigns: adminData.campaigns || [],
+                                events: adminData.events || [],
+                                news: adminData.news || []
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        if (isMounted.current) { setError(`Failed to load dashboard data: ${err.message}. Is the server running?`); }
+                    })
+                    .finally(() => {
+                        if (isMounted.current) setLoading(false);
+                    });
+            };
+
+            useEffect(() => {
+                if (sessionStorage.getItem('admin_logged_in') !== 'true') {
+                    navigate('admin');
+                    return;
+                }
+                fetchData();
+            }, [navigate]);
+
+            const handleApprove = async (ngoId) => {
+                try {
+                    const response = await fetch(`${API_URL}/admin/approve/${ngoId}`, { method: 'POST' });
+                    if (response.ok) {
+                        if (isMounted.current) fetchData();
+                    } else { alert('Failed to approve NGO.'); } // Use custom modal
+                } catch (err) { alert('Error connecting to server.'); } // Use custom modal
+            };
+
+            // --- NEW: Admin Delete Handler ---
+            const handleAdminDelete = async (type, id, name) => {
+                const typeName = type.slice(0, -1); // 'ngos' -> 'ngo'
+                if (isDeleting === id) return; // Prevent double clicks
+                
+                // Use a custom modal in a real app
+                if (!window.confirm(`Are you sure you want to PERMANENTLY delete this ${typeName}: ${name}? This action cannot be undone.`)) {
+                    return;
+                }
+                
+                if (!isMounted.current) return;
+                setIsDeleting(id); // Set loading state for this specific item
+                setError('');
+
+                try {
+                    const response = await fetch(`${API_URL}/admin/${type}/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' }
+                        // No body needed for admin delete, auth is session-based
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.message || `Failed to delete ${typeName}`);
+                    }
+                    if (isMounted.current) {
+                        console.log(`Admin deleted ${typeName}: ${id}`);
+                        fetchData(); // Refresh all data
+                    }
+                } catch (err) {
+                    console.error(`Error admin-deleting ${type}:`, err);
+                    if (isMounted.current) {
+                        setError(`Error: ${err.message}`); // Show error on dashboard
+                    }
+                } finally {
+                    if (isMounted.current) setIsDeleting(null);
+                }
+            };
+            // --- End of new handler ---
+
+            if (loading) return <p className="text-center">Loading dashboard data...</p>;
+
+            const approvedNgos = Array.isArray(data.ngos) ? data.ngos.filter(n => n.status === 'approved') : [];
+            const pendingNgos = Array.isArray(data.ngos) ? data.ngos.filter(n => n.status === 'pending') : [];
+            const deactivatedNgos = Array.isArray(data.ngos) ? data.ngos.filter(n => n.status === 'deactivated') : [];
+
+            const smallButtonClass = "px-3 py-1 text-sm disabled:opacity-50";
+
+            return (
+                <div>
+                    <h2 className="text-3xl font-bold mb-6">Admin Dashboard</h2>
+                    {error && <p className="text-center text-red-600 bg-red-100 p-4 rounded-md mb-4">{error}</p>}
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        
+                        <DashboardCard title="Pending NGOs" list={pendingNgos} className="lg:col-span-2" renderItem={ngo => (
+                            <div className="flex justify-between items-center">
+                                <div><strong>{ngo.name}</strong><span className="text-sm text-gray-600 block">{ngo.email}</span></div>
+                                <div className="flex-shrink-0 ml-2 space-x-2">
+                                    <Button onClick={() => handleApprove(ngo.id)} variant="secondary" className={smallButtonClass} disabled={isDeleting === ngo.id}>Approve</Button>
+                                    <Button onClick={() => handleAdminDelete('ngos', ngo.id, ngo.name)} variant="danger" className={smallButtonClass} disabled={isDeleting === ngo.id}>
+                                        {isDeleting === ngo.id ? '...' : 'Delete'}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}/>
+                        
+                        <DashboardCard title="Approved NGOs" list={approvedNgos} className="lg:col-span-2" renderItem={ngo => (
+                            <div className="flex justify-between items-center">
+                                <div><strong>{ngo.name}</strong><span className="text-sm text-gray-600 block">{ngo.email}</span></div>
+                                <Button onClick={() => handleAdminDelete('ngos', ngo.id, ngo.name)} variant="danger" className={smallButtonClass} disabled={isDeleting === ngo.id}>
+                                    {isDeleting === ngo.id ? '...' : 'Delete'}
+                                </Button>
+                            </div>
+                        )}/>
+
+                        <DashboardCard title="Deactivated NGOs" list={deactivatedNgos} className="lg:col-span-2" renderItem={ngo => (
+                            <div className="flex justify-between items-center">
+                                <div><strong>{ngo.name}</strong><span className="text-sm text-gray-600 block">{ngo.email}</span></div>
+                                <Button onClick={() => handleAdminDelete('ngos', ngo.id, ngo.name)} variant="danger" className={smallButtonClass} disabled={isDeleting === ngo.id}>
+                                    {isDeleting === ngo.id ? '...' : 'Delete'}
+                                </Button>
+                            </div>
+                        )}/>
+
+                        <DashboardCard title="All Campaigns" list={data.campaigns} className="lg:col-span-3" renderItem={item => (
+                            <div className="flex justify-between items-center">
+                                <div><strong>{item.title}</strong><span className="text-sm text-gray-600 block">by {item.host}</span></div>
+                                <Button onClick={() => handleAdminDelete('campaigns', item.id, item.title)} variant="danger" className={smallButtonClass} disabled={isDeleting === item.id}>
+                                    {isDeleting === item.id ? '...' : 'Delete'}
+                                </Button>
+                            </div>
+                        )}/>
+
+                        <DashboardCard title="All Events" list={data.events} className="lg:col-span-3" renderItem={item => (
+                            <div className="flex justify-between items-center">
+                                <div><strong>{item.title}</strong><span className="text-sm text-gray-600 block">by {item.host}</span></div>
+                                <Button onClick={() => handleAdminDelete('events', item.id, item.title)} variant="danger" className={smallButtonClass} disabled={isDeleting === item.id}>
+                                    {isDeleting === item.id ? '...' : 'Delete'}
+                                </Button>
+                            </div>
+                        )}/>
+
+                        <DashboardCard title="All News" list={data.news} className="lg:col-span-3" renderItem={item => (
+                            <div className="flex justify-between items-center">
+                                <div><strong>{item.title}</strong><span className="text-sm text-gray-600 block">by {item.host}</span></div>
+                                <Button onClick={() => handleAdminDelete('news', item.id, item.title)} variant="danger" className={smallButtonClass} disabled={isDeleting === item.id}>
+                                    {isDeleting === item.id ? '...' : 'Delete'}
+                                </Button>
+                            </div>
+                        )}/>
+                        
+                        <DashboardCard title="Contact Messages" list={data.contactMessages} renderItem={msg => (<div><strong>{msg.name}</strong> ({msg.email})<p className="text-sm text-gray-700 mt-1">{msg.message}</p></div>)}/>
+                        <DashboardCard title="Volunteers" list={data.volunteers} renderItem={v => <span>{v.name} ({v.email})</span>}/>
+                        <DashboardCard title="Donors" list={data.donors} renderItem={d => <span>{d.name} (₹{d.amount})</span>}/>
+                    </div>
+                </div>
+            );
+        }
+        // --- NgoLoginPage ---
+        function NgoLoginPage() {
+            const { navigate, setLoggedInNgo } = useNavigation();
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const isMounted = useRef(true);
+            useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setIsLoading(true);
+                try {
+                    const response = await fetch(API_URL + '/ngo/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+                    if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message || `HTTP error! status: ${response.status}`); }
+                    const data = await response.json();
+                    if (isMounted.current) {
+                        if (data.success) { localStorage.setItem('loggedInNgoId', data.ngoId); setLoggedInNgo(data.ngoId); navigate('ngo-dashboard'); }
+                        else { setError(data.message || 'Incorrect email/password.'); }
+                    }
+                } catch (err) { console.error("Login Error:", err); if (isMounted.current) { if (err instanceof TypeError && err.message === 'Failed to fetch') { setError('Login failed. Could not connect to the server.'); } else { setError(err.message || 'Login failed.'); } }
+                } finally { if (isMounted.current) setIsLoading(false); }
+            };
+
+            return (
+                <section className="max-w-md mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    <h2 className="text-3xl font-bold mb-4">NGO Dashboard Login</h2>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
+                        <FormInput label="NGO Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isLoading} />
+                        <FormInput label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} required disabled={isLoading} />
+                        <div className="flex justify-between items-center">
+                            <Button type="submit" variant="primary" disabled={isLoading}>
+                                {isLoading ? <><Spinner /> Logging in...</> : 'Login'}
+                            </Button>
+                            <a href="#" onClick={(e) => { e.preventDefault(); navigate('ngo-forgot-password'); }} className="text-sm text-gray-600 hover:underline"> Forgot Password? </a>
+                        </div>
+                    </form>
+                </section>
+            );
+        }
+
+        // --- NgoForgotPasswordPage ---
+        function NgoForgotPasswordPage() {
+            const { navigate } = useNavigation();
+            const [email, setEmail] = useState('');
+            const [message, setMessage] = useState('');
+            const [error, setError] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const isMounted = useRef(true);
+            useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setMessage(''); setIsLoading(true);
+                try {
+                    const response = await fetch(API_URL + '/ngo/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+                    const data = await response.json();
+                    if (isMounted.current) {
+                        if (data.success) { setMessage(data.message); }
+                        else { setError(data.message || 'Could not process request.'); }
+                    }
+                } catch (err) { if (isMounted.current) setError('Could not connect to server.'); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+
+            return (
+                <section className="max-w-md mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    <h2 className="text-3xl font-bold mb-4">Forgot Password</h2>
+                    {message ? (
+                        <div className="text-green-600 p-3 bg-green-100 rounded-md"><p>{message}</p><Button onClick={() => navigate('ngo-login')} variant="secondary" className="mt-4">Back to Login</Button></div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <p>Enter NGO email. Password will be logged to server terminal (demo).</p>
+                            {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
+                            <FormInput label="NGO Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isLoading} />
+                            <div className="flex justify-between items-center">
+                                <Button type="submit" variant="primary" disabled={isLoading}>
+                                    {isLoading ? <><Spinner /> Sending...</> : 'Retrieve Password'}
+                                </Button>
+                                <a href="#" onClick={(e) => { e.preventDefault(); navigate('ngo-login'); }} className="text-sm text-gray-600 hover:underline"> Back to Login </a>
+                            </div>
+                        </form>
+                    )}
+                </section>
+            );
+        }
+
+
+        // --- NGO Dashboard Components ---
+        function NgoProfileForm({ ngo, setNgo }) {
+             const { navigate, setLoggedInNgo } = useNavigation();
+             const [error, setError] = useState(''); const [success, setSuccess] = useState('');
+             const [logoFile, setLogoFile] = useState(null);
+             const [logoPreview, setLogoPreview] = useState(getImageUrl(ngo.logo));
+             const [isLoading, setIsLoading] = useState(false);
+             const [isDeactivating, setIsDeactivating] = useState(false);
+             const isMounted = useRef(true);
+             useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleFileChange = (e) => { const file = e.target.files[0]; if (file) { setLogoFile(file); setLogoPreview(URL.createObjectURL(file)); } else { setLogoFile(null); setLogoPreview(getImageUrl(ngo.logo)); } };
+            const handleUpdate = async (e) => {
+                e.preventDefault(); setSuccess(''); setError(''); setIsLoading(true);
+                const formData = new FormData();
+                formData.append('name', ngo.name); formData.append('cause', ngo.cause); formData.append('description', ngo.description); formData.append('upiId', ngo.upiId || ''); formData.append('address', ngo.address); formData.append('phone', ngo.phone || '');
+                if (logoFile) { formData.append('logo', logoFile); }
+                try {
+                    const response = await fetch(`${API_URL}/ngos/${ngo.id}`, { method: 'PUT', body: formData });
+                    const result = await response.json();
+                    if (isMounted.current) {
+                        if (result.success) { setSuccess('Profile updated!'); setNgo(result.ngo); setLogoFile(null); setLogoPreview(getImageUrl(result.ngo.logo)); setTimeout(() => setSuccess(''), 3000); }
+                        else { setError('Error saving: ' + (result.message || 'Unknown error')); setLogoPreview(getImageUrl(ngo.logo)); }
+                    }
+                } catch (err) { if (isMounted.current) { setError('Could not connect to server.'); setLogoPreview(getImageUrl(ngo.logo)); } }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+            const handleChange = (e) => { setNgo({ ...ngo, [e.target.name]: e.target.value }); };
+
+            const handleDeactivate = async () => {
+                // Use a custom modal in a real app, window.confirm is used for simplicity
+                if (!window.confirm("Are you sure you want to deactivate your account? This will hide your profile and all content from the public. You can contact an admin to reactivate.")) { return; }
+                setIsDeactivating(true); setError(''); setSuccess('');
+                try {
+                    const response = await fetch(`${API_URL}/ngos/${ngo.id}/deactivate`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loggedInNgoId: ngo.id }) });
+                    const result = await response.json();
+                    if (isMounted.current) {
+                        if (result.success) {
+                            setSuccess('Account deactivated.');
+                            localStorage.removeItem('loggedInNgoId');
+                            setLoggedInNgo(null);
+                            navigate('home');
+                        } else { setError(result.message || 'Failed to deactivate account.'); }
+                    }
+                } catch (err) { if(isMounted.current) setError("Error deactivating account."); }
+                finally { if (isMounted.current) setIsDeactivating(false); }
+            };
+
+            return (
+                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    <form onSubmit={handleUpdate} className="registration-form space-y-4">
+                        {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
+                        {success && <p className="text-green-600 p-3 bg-green-100 rounded-md">{success}</p>}
+                        <div> <label className="font-bold block mb-1">Organization Logo:</label> {logoPreview && <img src={logoPreview} alt="Logo Preview" className="image-preview mb-2"/>} <input type="file" name="logo" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#6B8E23] hover:file:bg-violet-100" disabled={isLoading || isDeactivating}/> <span className="text-xs text-gray-500 block mt-1">Upload new logo (max 5MB). Leave blank to keep current.</span> </div>
+                        <FormInput label="Org Name" name="name" type="text" value={ngo.name} onChange={handleChange} required disabled={isLoading || isDeactivating}/>
+                        <FormInput label="Email" name="email" type="email" value={ngo.email} disabled hint="Cannot change email."/>
+                        <FormInput label="Address" name="address" type="textarea" value={ngo.address || ''} onChange={handleChange} required disabled={isLoading || isDeactivating}/>
+                        <FormInput label="Phone (Optional)" name="phone" type="tel" value={ngo.phone || ''} onChange={handleChange} disabled={isLoading || isDeactivating}/>
+                        <FormInput label="Cause" name="cause" type="select" value={ngo.cause} onChange={handleChange} disabled={isLoading || isDeactivating}><option>Education</option> <option>Environment</option> <option>Healthcare</option> <option>Animal Welfare</option> <option>Other</option></FormInput>
+                        <FormInput label="Mission" name="description" type="textarea" value={ngo.description || ''} onChange={handleChange} disabled={isLoading || isDeactivating}/>
+                        <FormInput label="UPI ID (Donations)" name="upiId" type="text" value={ngo.upiId || ''} onChange={handleChange} hint="e.g. your-ngo@okhdfcbank" disabled={isLoading || isDeactivating}/>
+                        <Button type="submit" variant="primary" disabled={isLoading || isDeactivating}>
+                             {isLoading ? <><Spinner /> Saving...</> : 'Save Changes'}
+                        </Button>
+                    </form>
+                    <div className="mt-8 pt-6 border-t border-red-300">
+                         <h3 className="text-xl font-bold text-red-700">Danger Zone</h3>
+                         <p className="text-gray-600 my-2 text-sm">Deactivating your account will hide your profile and all content from the public. You must contact an admin to reactivate.</p>
+                         <Button onClick={handleDeactivate} variant="danger" disabled={isLoading || isDeactivating}>
+                            {isDeactivating ? <><Spinner /> Deactivating...</> : 'Deactivate Account'}
+                         </Button>
+                    </div>
+                </section>
+            );
+         }
+        function CreateEventForm({ ngo }) {
+            const [formData, setFormData] = useState({ title: '', date: '', description: '' }); const [error, setError] = useState(''); const [success, setSuccess] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const isMounted = useRef(true);
+            useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setSuccess(''); setIsLoading(true);
+                try {
+                    const response = await fetch(API_URL + '/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...formData, ngoId: ngo.id }), });
+                    if (isMounted.current) {
+                        if (response.ok) { setSuccess('Event created!'); setFormData({ title: '', date: '', description: '' }); setTimeout(() => setSuccess(''), 3000); }
+                        else { const err = await response.json(); setError(err.message || 'Failed to create.'); }
+                    }
+                } catch (err) { if(isMounted.current) setError('Could not connect.'); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+            return (
+                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <h3 className="text-2xl font-bold mb-4">Create New Event</h3>
+                        {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
+                        {success && <p className="text-green-600 p-3 bg-green-100 rounded-md">{success}</p>}
+                        <FormInput label="Title" name="title" type="text" value={formData.title} onChange={handleChange} required disabled={isLoading}/>
+                        <FormInput label="Date" name="date" type="date" value={formData.date} onChange={handleChange} required disabled={isLoading}/>
+                        <FormInput label="Description" name="description" type="textarea" value={formData.description} onChange={handleChange} required disabled={isLoading}/>
+                        <Button type="submit" variant="primary" disabled={isLoading}>
+                            {isLoading ? <><Spinner /> Creating...</> : 'Create Event'}
+                        </Button>
+                    </form>
+                </section>
+            );
+         }
+         function CreateNewsForm({ ngo }) {
+            const [formData, setFormData] = useState({ title: '', content: '' }); const [error, setError] = useState(''); const [success, setSuccess] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const isMounted = useRef(true);
+            useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setSuccess(''); setIsLoading(true);
+                try {
+                    const response = await fetch(API_URL + '/news', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...formData, date: new Date().toISOString(), ngoId: ngo.id }), });
+                    if (isMounted.current) {
+                        if (response.ok) { setSuccess('News added!'); setFormData({ title: '', content: '' }); setTimeout(() => setSuccess(''), 3000); }
+                        else { const err = await response.json(); setError(err.message || 'Failed to add.'); }
+                    }
+                } catch (err) { if (isMounted.current) setError('Could not connect.'); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+            return (
+                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <h3 className="text-2xl font-bold mb-4">Add News Article</h3>
+                        {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
+                        {success && <p className="text-green-600 p-3 bg-green-100 rounded-md">{success}</p>}
+                        <FormInput label="Title" name="title" type="text" value={formData.title} onChange={handleChange} required disabled={isLoading}/>
+                        <FormInput label="Content" name="content" type="textarea" value={formData.content} onChange={handleChange} required disabled={isLoading}/>
+                        <Button type="submit" variant="primary" disabled={isLoading}>
+                             {isLoading ? <><Spinner /> Adding...</> : 'Add News'}
+                        </Button>
+                    </form>
+                </section>
+            );
+        }
+        function CreateCampaignForm({ ngo }) {
+             const [formData, setFormData] = useState({ title: '', description: '', goalAmount: '50000', imageUrl: '' });
+             const [campaignImageFile, setCampaignImageFile] = useState(null); const [imagePreview, setImagePreview] = useState(null);
+             const [error, setError] = useState(''); const [success, setSuccess] = useState('');
+             const [isLoading, setIsLoading] = useState(false);
+             const isMounted = useRef(true);
+             useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
+
+            const handleTextChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+            const handleFileChange = (e) => { const file = e.target.files[0]; if (file) { setCampaignImageFile(file); setImagePreview(URL.createObjectURL(file)); } else { setCampaignImageFile(null); setImagePreview(null); } };
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setSuccess(''); setIsLoading(true);
+                const submissionData = new FormData();
+                submissionData.append('title', formData.title); submissionData.append('description', formData.description); submissionData.append('goalAmount', formData.goalAmount); submissionData.append('ngoId', ngo.id);
+                if (campaignImageFile) { submissionData.append('campaignImage', campaignImageFile); }
+                else if (formData.imageUrl) { submissionData.append('imageUrl', formData.imageUrl); }
+                try {
+                    const response = await fetch(API_URL + '/campaigns', { method: 'POST', body: submissionData, });
+                    if (isMounted.current) {
+                        if (response.ok) { setSuccess('Campaign created!'); setFormData({ title: '', description: '', goalAmount: '50000', imageUrl: '' }); setCampaignImageFile(null); setImagePreview(null); setTimeout(() => setSuccess(''), 3000); }
+                        else { const err = await response.json(); setError(err.message || 'Failed to create.'); }
+                    }
+                } catch (err) { if (isMounted.current) setError('Could not connect to server.'); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+            return (
+                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <h3 className="text-2xl font-bold mb-4">Create New Campaign</h3>
+                        {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
+                        {success && <p className="text-green-600 p-3 bg-green-100 rounded-md">{success}</p>}
+                        <FormInput label="Title" name="title" type="text" value={formData.title} onChange={handleTextChange} required disabled={isLoading}/>
+                         <div>
+                            <label className="font-bold block mb-1">Campaign Image:</label>
+                            {imagePreview && <img src={imagePreview} alt="Preview" className="campaign-image-preview mb-2"/>}
+                            <input type="file" name="campaignImage" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#6B8E23] hover:file:bg-violet-100" disabled={isLoading}/>
+                            <span className="text-xs text-gray-500 block mt-1">Upload image (max 5MB) or provide URL below.</span>
+                         </div>
+                         <FormInput label="Or Image URL (Fallback)" name="imageUrl" type="text" value={formData.imageUrl} onChange={handleTextChange} hint="e.g., https://placehold.co/600x400" disabled={isLoading}/>
+                        <FormInput label="Goal Amount (₹)" name="goalAmount" type="number" value={formData.goalAmount} onChange={handleTextChange} required disabled={isLoading}/>
+                        <FormInput label="Description" name="description" type="textarea" value={formData.description} onChange={handleTextChange} required disabled={isLoading}/>
+                        <Button type="submit" variant="primary" disabled={isLoading}>
+                             {isLoading ? <><Spinner /> Creating...</> : 'Create Campaign'}
+                        </Button>
+                    </form>
+                </section>
+            );
+         }
+
+        // --- Manage Content Page ---
+        function ManageContentPage({ ngo, onEditClick }) {
+            const [myEvents, setMyEvents] = useState([]);
+            const [myNews, setMyNews] = useState([]);
+            const [myCampaigns, setMyCampaigns] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
+            const isMounted = useRef(true);
+
+            const fetchData = () => {
+                if (!isMounted.current) return;
+                setLoading(true); setError('');
+                const fetchEvents = fetch(`${API_URL}/ngos/${ngo.id}/events`).then(res => res.json());
+                const fetchNews = fetch(`${API_URL}/ngos/${ngo.id}/news`).then(res => res.json());
+                const fetchCampaigns = fetch(`${API_URL}/ngos/${ngo.id}/campaigns`).then(res => res.json());
+
+                Promise.all([fetchEvents, fetchNews, fetchCampaigns])
+                    .then(([eventsData, newsData, campaignsData]) => {
+                        if (isMounted.current) {
+                            setMyEvents(eventsData);
+                            setMyNews(newsData);
+                            setMyCampaigns(campaignsData);
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Error fetching content:", err);
+                        if (isMounted.current) { setError("Could not load content. Please try again."); }
+                    })
+                    .finally(() => {
+                         if (isMounted.current) setLoading(false);
+                    });
+            };
+
+            useEffect(() => {
+                isMounted.current = true;
+                fetchData();
+                return () => { isMounted.current = false; };
+            }, [ngo.id]);
+
+            const handleDelete = async (type, id) => {
+                // Use custom modal in real app
+                if (!window.confirm(`Are you sure you want to delete this ${type.slice(0, -1)}? This action cannot be undone.`)) {
+                    return;
+                }
+                try {
+                    const response = await fetch(`${API_URL}/${type}/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ngoId: ngo.id })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.message || 'Failed to delete');
+                    }
+                    if (isMounted.current) fetchData();
+                } catch (err) {
+                    console.error(`Error deleting ${type}:`, err);
+                    alert(`Error: ${err.message}`); // Use custom modal in real app
+                }
+            };
+
+            if (loading) return <p className="text-center">Loading content...</p>;
+            if (error) return <p className="text-center text-red-600">{error}</p>;
+
+            const formatDate = (dateString) => new Date(dateString).toLocaleDateString();
+
+            return (
+                <div className="space-y-8">
+                    <section className="bg-white p-6 rounded-lg border border-gray-300">
+                        <h3 className="text-2xl font-bold mb-4">Manage Campaigns</h3>
+                        {Array.isArray(myCampaigns) && myCampaigns.length > 0 ? (
+                            <ul className="space-y-3">
+                                {myCampaigns.map(item => (
+                                    <li key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p className="font-bold">{item.title}</p>
+                                            <p className="text-sm text-gray-600">Goal: ₹{item.goalAmount.toLocaleString('en-IN')} | Raised: ₹{(item.raisedAmount || 0).toLocaleString('en-IN')}</p>
+                                        </div>
+                                        <div>
+                                            <Button onClick={() => onEditClick('campaign', item.id)} variant="secondary" className="py-1 px-3 text-sm mr-2">Edit</Button>
+                                            <Button onClick={() => handleDelete('campaigns', item.id)} variant="danger" className="py-1 px-3 text-sm">Delete</Button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (<p>You have not created any campaigns yet.</p>)}
+                    </section>
+
+                    <section className="bg-white p-6 rounded-lg border border-gray-300">
+                        <h3 className="text-2xl font-bold mb-4">Manage Events</h3>
+                        {Array.isArray(myEvents) && myEvents.length > 0 ? (
+                            <ul className="space-y-3">
+                                {myEvents.map(item => (
+                                    <li key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p className="font-bold">{item.title}</p>
+                                            <p className="text-sm text-gray-600">Date: {formatDate(item.date)}</p>
+                                        </div>
+                                        <div>
+                                            <Button onClick={() => onEditClick('event', item.id)} variant="secondary" className="py-1 px-3 text-sm mr-2">Edit</Button>
+                                            <Button onClick={() => handleDelete('events', item.id)} variant="danger" className="py-1 px-3 text-sm">Delete</Button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (<p>You have not created any events yet.</p>)}
+                    </section>
+
+                    <section className="bg-white p-6 rounded-lg border border-gray-300">
+                        <h3 className="text-2xl font-bold mb-4">Manage News</h3>
+                        {Array.isArray(myNews) && myNews.length > 0 ? (
+                            <ul className="space-y-3">
+                                {myNews.map(item => (
+                                    <li key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p className="font-bold">{item.title}</p>
+                                            <p className="text-sm text-gray-600">Posted: {formatDate(item.date)}</p>
+                                        </div>
+                                        <div>
+                                            <Button onClick={() => onEditClick('news', item.id)} variant="secondary" className="py-1 px-3 text-sm mr-2">Edit</Button>
+                                            <Button onClick={() => handleDelete('news', item.id)} variant="danger" className="py-1 px-3 text-sm">Delete</Button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (<p>You have not created any news articles yet.</p>)}
+                    </section>
+                </div>
+            );
+        }
+
+        // --- View Donations Page ---
+        function ViewDonationsPage({ ngo }) {
+            const [donations, setDonations] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
+            const isMounted = useRef(true);
+
+            useEffect(() => {
+                isMounted.current = true;
+                setLoading(true); setError('');
+                fetch(`${API_URL}/ngo/${ngo.id}/donations`)
+                    .then(res => {
+                        if (!res.ok) throw new Error("Failed to fetch donations");
+                        return res.json();
+                    })
+                    .then(data => {
+                        if(isMounted.current) setDonations(data);
+                    })
+                    .catch(err => {
+                        console.error("Error fetching donations:", err);
+                        if(isMounted.current) setError(err.message || "Could not load donations.");
+                    })
+                    .finally(() => {
+                        if(isMounted.current) setLoading(false);
+                    });
+                
+                return () => { isMounted.current = false; };
+            }, [ngo.id]);
+
+            const formatDate = (dateString) => new Date(dateString).toLocaleString('en-IN');
+            const totalDonations = Array.isArray(donations) ? donations.reduce((acc, curr) => acc + curr.amount, 0) : 0;
+
+            return (
+                <section className="bg-white p-6 rounded-lg border border-gray-300">
+                    <h3 className="text-2xl font-bold mb-4">Donation History</h3>
+                    {loading && <p>Loading donations...</p>}
+                    {error && <p className="text-red-600">{error}</p>}
+                    {!loading && !error && (
+                        <>
+                            <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-6">
+                                <p className="text-lg font-bold text-green-800">
+                                    Total Received: ₹{totalDonations.toLocaleString('en-IN')}
+                                </p>
+                            </div>
+                            {Array.isArray(donations) && donations.length > 0 ? (
+                                <ul className="space-y-3">
+                                    <li className="flex justify-between items-center font-bold p-2 bg-gray-100 rounded-t-lg">
+                                        <span className="w-1/3">Donor Name</span>
+                                        <span className="w-1/3">Date</span>
+                                        <span className="w-1/3 text-right">Amount</span>
+                                    </li>
+                                    {donations.map(item => (
+                                        <li key={item.id} className="flex justify-between items-center p-2 border-b">
+                                            <div className="w-1/3">
+                                                <p>{item.name}</p>
+                                                {item.campaignId && item.campaignId.title ? (
+                                                    <p className="text-xs text-blue-600">For: {item.campaignId.title}</p>
+                                                ) : (
+                                                    <p className="text-xs text-gray-500">General Donation</p>
+                                                )}
+                                            </div>
+                                            <span className="w-1/3 text-sm text-gray-600 text-center">{formatDate(item.date)}</span>
+                                            <span className="w-1/3 text-right font-medium">₹{item.amount.toLocaleString('en-IN')}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p>You have not received any verified donations through the platform yet.</p>
+                            )}
+                        </>
+                    )}
+                </section>
+            );
+        }
+
+        // --- Edit Event Form ---
+        function EditEventForm({ ngo, eventId, onCancel, onSave }) {
+            const [formData, setFormData] = useState({ title: '', date: '', description: '' });
+            const [error, setError] = useState('');
+            const [success, setSuccess] = useState('');
+            const [isLoading, setIsLoading] = useState(true);
+            const isMounted = useRef(true);
+
+            useEffect(() => {
+                isMounted.current = true;
+                setError(''); setIsLoading(true);
+                fetch(`${API_URL}/events/${eventId}`)
+                    .then(res => {
+                        if (!res.ok) throw new Error('Failed to fetch event data');
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (isMounted.current) {
+                            setFormData({
+                                title: data.title,
+                                date: formatDateForInput(data.date),
+                                description: data.description
+                            });
+                            setIsLoading(false);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        if (isMounted.current) setError("Could not load event data.");
+                    });
+                return () => { isMounted.current = false; };
+            }, [eventId]);
+
+            const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+            
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setSuccess(''); setIsLoading(true);
+                try {
+                    const response = await fetch(`${API_URL}/events/${eventId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...formData, ngoId: ngo.id })
+                    });
+                    if (isMounted.current) {
+                        const result = await response.json();
+                        if (response.ok) {
+                            setSuccess('Event updated successfully!');
+                            setTimeout(() => {
+                                if (isMounted.current) onSave();
+                            }, 1500);
+                        } else {
+                            setError(result.message || 'Failed to update event.');
+                        }
+                    }
+                } catch (err) { if(isMounted.current) setError('Could not connect to server.'); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+
+            if (isLoading && !formData.title) return <p className="text-center">Loading event editor...</p>;
+
+            return (
+                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <h3 className="text-2xl font-bold mb-4">Edit Event</h3>
+                        {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
+                        {success && <p className="text-green-600 p-3 bg-green-100 rounded-md">{success}</p>}
+                        <FormInput label="Title" name="title" type="text" value={formData.title} onChange={handleChange} required disabled={isLoading}/>
+                        <FormInput label="Date" name="date" type="date" value={formData.date} onChange={handleChange} required disabled={isLoading}/>
+                        <FormInput label="Description" name="description" type="textarea" value={formData.description} onChange={handleChange} required disabled={isLoading}/>
+                        <div className="flex gap-4">
+                            <Button type="button" variant="secondary" onClick={onCancel} disabled={isLoading}>Cancel</Button>
+                            <Button type="submit" variant="primary" disabled={isLoading}>
+                                {isLoading ? <><Spinner /> Saving...</> : 'Save Changes'}
+                            </Button>
+                        </div>
+                    </form>
+                </section>
+            );
+        }
+
+        // --- Edit News Form ---
+        function EditNewsForm({ ngo, newsId, onCancel, onSave }) {
+            const [formData, setFormData] = useState({ title: '', content: '', date: '' });
+            const [error, setError] = useState('');
+            const [success, setSuccess] = useState('');
+            const [isLoading, setIsLoading] = useState(true);
+            const isMounted = useRef(true);
+
+            useEffect(() => {
+                isMounted.current = true;
+                setError(''); setIsLoading(true);
+                fetch(`${API_URL}/news/${newsId}`)
+                    .then(res => { if (!res.ok) throw new Error('Failed to fetch news data'); return res.json(); })
+                    .then(data => {
+                        if (isMounted.current) {
+                            setFormData({ title: data.title, content: data.content, date: formatDateForInput(data.date) });
+                            setIsLoading(false);
+                        }
+                    })
+                    .catch(err => { console.error(err); if (isMounted.current) setError("Could not load news data."); });
+                return () => { isMounted.current = false; };
+            }, [newsId]);
+
+            const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+            
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setSuccess(''); setIsLoading(true);
+                try {
+                    const response = await fetch(`${API_URL}/news/${newsId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...formData, ngoId: ngo.id })
+                    });
+                    if (isMounted.current) {
+                        const result = await response.json();
+                        if (response.ok) {
+                            setSuccess('News item updated!');
+                            setTimeout(() => { if (isMounted.current) onSave(); }, 1500);
+                        } else { setError(result.message || 'Failed to update news.'); }
+                    }
+                } catch (err) { if(isMounted.current) setError('Could not connect to server.'); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+
+            if (isLoading && !formData.title) return <p className="text-center">Loading news editor...</p>;
+
+            return (
+                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <h3 className="text-2xl font-bold mb-4">Edit News Article</h3>
+                        {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
+                        {success && <p className="text-green-600 p-3 bg-green-100 rounded-md">{success}</p>}
+                        <FormInput label="Title" name="title" type="text" value={formData.title} onChange={handleChange} required disabled={isLoading}/>
+                        <FormInput label="Date" name="date" type="date" value={formData.date} onChange={handleChange} required disabled={isLoading}/>
+                        <FormInput label="Content" name="content" type="textarea" value={formData.content} onChange={handleChange} required disabled={isLoading}/>
+                        <div className="flex gap-4">
+                            <Button type="button" variant="secondary" onClick={onCancel} disabled={isLoading}>Cancel</Button>
+                            <Button type="submit" variant="primary" disabled={isLoading}>
+                                {isLoading ? <><Spinner /> Saving...</> : 'Save Changes'}
+                            </Button>
+                        </div>
+                    </form>
+                </section>
+            );
+        }
+
+        // --- Edit Campaign Form ---
+        function EditCampaignForm({ ngo, campaignId, onCancel, onSave }) {
+            const [formData, setFormData] = useState({ title: '', description: '', goalAmount: '', imageUrl: '' });
+            const [campaignImageFile, setCampaignImageFile] = useState(null);
+            const [imagePreview, setImagePreview] = useState(null);
+            const [error, setError] = useState('');
+            const [success, setSuccess] = useState('');
+            const [isLoading, setIsLoading] = useState(true);
+            const [goalAmountDisabled, setGoalAmountDisabled] = useState(false);
+            const isMounted = useRef(true);
+
+             useEffect(() => {
+                 isMounted.current = true;
+                 setError(''); setIsLoading(true);
+                 fetch(`${API_URL}/campaigns/${campaignId}`)
+                     .then(res => { if (!res.ok) throw new Error('Failed to fetch campaign data'); return res.json(); })
+                     .then(data => {
+                         if (isMounted.current) {
+                             setFormData({ title: data.title, description: data.description, goalAmount: data.goalAmount, imageUrl: data.imageUrl });
+                             setImagePreview(getImageUrl(data.imageUrl));
+                             if (data.raisedAmount > 0) {
+                                 setGoalAmountDisabled(true);
+                             }
+                             setIsLoading(false);
+                         }
+                     })
+                     .catch(err => { console.error(err); if (isMounted.current) setError("Could not load campaign data."); });
+                 return () => { isMounted.current = false; };
+            }, [campaignId]);
+
+            const handleTextChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+            const handleFileChange = (e) => { const file = e.target.files[0]; if (file) { setCampaignImageFile(file); setImagePreview(URL.createObjectURL(file)); } else { setCampaignImageFile(null); setImagePreview(getImageUrl(formData.imageUrl)); } };
+            
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setSuccess(''); setIsLoading(true);
+                const submissionData = new FormData();
+                submissionData.append('title', formData.title);
+                submissionData.append('description', formData.description);
+                submissionData.append('goalAmount', formData.goalAmount);
+                submissionData.append('ngoId', ngo.id);
+                if (campaignImageFile) {
+                    submissionData.append('campaignImage', campaignImageFile);
+                }
+                
+                try {
+                    const response = await fetch(`${API_URL}/campaigns/${campaignId}`, { method: 'PUT', body: submissionData });
+                    if (isMounted.current) {
+                        const result = await response.json();
+                        if (response.ok) {
+                            setSuccess('Campaign updated!');
+                            setTimeout(() => { if (isMounted.current) onSave(); }, 1500);
+                        } else { setError(result.message || 'Failed to update.'); }
+                    }
+                } catch (err) { if (isMounted.current) setError('Could not connect to server.'); }
+                finally { if (isMounted.current) setIsLoading(false); }
+            };
+
+            if (isLoading && !formData.title) return <p className="text-center">Loading campaign editor...</p>;
+
+            return (
+                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <h3 className="text-2xl font-bold mb-4">Edit Campaign</h3>
+                        {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
+                        {success && <p className="text-green-600 p-3 bg-green-100 rounded-md">{success}</p>}
+                        <FormInput label="Title" name="title" type="text" value={formData.title} onChange={handleTextChange} required disabled={isLoading}/>
+                         <div>
+                            <label className="font-bold block mb-1">Campaign Image:</label>
+                            {imagePreview && <img src={imagePreview} alt="Preview" className="campaign-image-preview mb-2"/>}
+                            <input type="file" name="campaignImage" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#6B8E23] hover:file:bg-violet-100" disabled={isLoading}/>
+                            <span className="text-xs text-gray-500 block mt-1">Upload new image (max 5MB). Leave blank to keep current.</span>
+                         </div>
+                        <FormInput 
+                            label="Goal Amount (₹)" 
+                            name="goalAmount" 
+                            type="number" 
+                            value={formData.goalAmount} 
+                            onChange={handleTextChange} 
+                            required 
+                            disabled={isLoading || goalAmountDisabled}
+                            hint={goalAmountDisabled ? "Goal amount cannot be changed after donations are received." : ""}
+                        />
+                        <FormInput label="Description" name="description" type="textarea" value={formData.description} onChange={handleTextChange} required disabled={isLoading}/>
+                        <div className="flex gap-4">
+                            <Button type="button" variant="secondary" onClick={onCancel} disabled={isLoading}>Cancel</Button>
+                            <Button type="submit" variant="primary" disabled={isLoading}>
+                                {isLoading ? <><Spinner /> Saving...</> : 'Save Changes'}
+                            </Button>
+                        </div>
+                    </form>
+                </section>
+            );
+         }
+
+
+        // --- NgoDashboardPage (MODIFIED) ---
+        function NgoDashboardPage() {
+            const { navigate, loggedInNgo, setLoggedInNgo } = useNavigation();
+            const [ngo, setNgo] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
+            const [dashboardView, setDashboardView] = useState('main');
+            const [editingItemId, setEditingItemId] = useState(null);
+            const isMounted = useRef(true);
+
+            useEffect(() => {
+                isMounted.current = true;
+                if (!loggedInNgo) { navigate('ngo-login'); return; }
+                setLoading(true); setError('');
+                fetch(`${API_URL}/ngos/${loggedInNgo}`)
+                    .then(res => {
+                        if (!res.ok) {
+                            if (res.status === 401 || res.status === 404) { // Handle cases where token is bad or NGO deleted
+                                localStorage.removeItem('loggedInNgoId');
+                                setLoggedInNgo(null);
+                                navigate('ngo-login');
+                            }
+                            throw new Error('Failed to fetch NGO data');
+                        }
+                        return res.json();
+                    })
+                    .then(data => { if (isMounted.current) { setNgo(data); setLoading(false); } })
+                    .catch(err => { console.error(err); if (isMounted.current) { setError('Could not load your profile.'); setLoading(false); } });
+                return () => { isMounted.current = false; };
+            }, [loggedInNgo, navigate, setLoggedInNgo]);
+
+            if (loading) return <p className="text-center">Loading dashboard...</p>;
+            if (error) return <p className="text-center text-red-600">{error}</p>;
+            if (!ngo) return <p className="text-center">Error: NGO data not found.</p>;
+
+            const handleEditClick = (type, id) => {
+                setEditingItemId(id);
+                setDashboardView(`edit-${type}`);
+            };
+            
+            const handleOnSave = () => {
+                setEditingItemId(null);
+                setDashboardView('manage-content');
+            };
+            const handleOnCancel = () => {
+                setEditingItemId(null);
+                setDashboardView('manage-content');
+            };
+
+            const renderDashboardView = () => {
+                switch (dashboardView) {
+                    case 'main':
+                        return (
+                            <div className="bg-white p-6 rounded-lg border border-gray-300">
+                                <div className="flex flex-col sm:flex-row items-center gap-6">
+                                    <img src={getImageUrl(ngo.logo)} alt="Logo" className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"/>
+                                    <div>
+                                        <h2 className="text-3xl font-bold">{ngo.name}</h2>
+                                        <p className="text-lg text-gray-600">{ngo.cause}</p>
+                                        <p className="mt-2 text-gray-700">{ngo.address}</p>
+                                    </div>
+                                </div>
+                                <hr className="my-6"/>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                    <Button onClick={() => setDashboardView('edit-profile')} variant="secondary" className="w-full">Edit Profile</Button>
+                                    <Button onClick={() => setDashboardView('create-content')} variant="secondary" className="w-full">Create Content</Button>
+                                    <Button onClick={() => setDashboardView('manage-content')} variant="secondary" className="w-full">Manage Content</Button>
+                                    <Button onClick={() => setDashboardView('donations')} variant="secondary" className="w-full">View Donations</Button>
+                                </div>
+                            </div>
+                        );
+                    case 'edit-profile':
+                        return (
+                            <>
+                                <Button onClick={() => setDashboardView('main')} variant="secondary" className="mb-4">&larr; Back to Dashboard</Button>
+                                <NgoProfileForm ngo={ngo} setNgo={setNgo} />
+                            </>
+                        );
+                    case 'create-content':
+                        return (
+                             <>
+                                <Button onClick={() => setDashboardView('main')} variant="secondary" className="mb-4">&larr; Back to Dashboard</Button>
+                                <div className="space-y-8">
+                                    <CreateCampaignForm ngo={ngo} />
+                                    <CreateEventForm ngo={ngo} />
+                                    <CreateNewsForm ngo={ngo} />
+                                </div>
+                             </>
+                        );
+                    case 'manage-content':
+                         return (
+                             <>
+                                <Button onClick={() => setDashboardView('main')} variant="secondary" className="mb-4">&larr; Back to Dashboard</Button>
+                                <ManageContentPage ngo={ngo} onEditClick={handleEditClick} />
+                             </>
+                        );
+                    case 'donations':
+                         return (
+                             <>
+                                <Button onClick={() => setDashboardView('main')} variant="secondary" className="mb-4">&larr; Back to Dashboard</Button>
+                                <ViewDonationsPage ngo={ngo} />
+                             </>
+                        );
+                    case 'edit-event':
+                        return (
+                            <>
+                                <Button onClick={handleOnCancel} variant="secondary" className="mb-4">&larr; Back to Manage Content</Button>
+                                <EditEventForm ngo={ngo} eventId={editingItemId} onCancel={handleOnCancel} onSave={handleOnSave} />
+                            </>
+                        );
+                    case 'edit-news':
+                        return (
+                            <>
+                                <Button onClick={handleOnCancel} variant="secondary" className="mb-4">&larr; Back to Manage Content</Button>
+                                <EditNewsForm ngo={ngo} newsId={editingItemId} onCancel={handleOnCancel} onSave={handleOnSave} />
+                            </>
+                        );
+                    case 'edit-campaign':
+                         return (
+                             <>
+                                <Button onClick={handleOnCancel} variant="secondary" className="mb-4">&larr; Back to Manage Content</Button>
+                                <EditCampaignForm ngo={ngo} campaignId={editingItemId} onCancel={handleOnCancel} onSave={handleOnSave} />
+                             </>
+                        );
+                    default:
+                        setDashboardView('main');
+                        return null;
+                }
+            };
+
+            return (
+                <div>
+                    {renderDashboardView()}
+                </div>
+            );
+        } // End of NgoDashboardPage
+
+        // --- All Campaigns Page ---
+        function AllCampaignsPage() {
+             const { navigate } = useNavigation();
+            const [campaigns, setCampaigns] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(null); const [allNgos, setAllNgos] = useState([]);
+            useEffect(() => { const fetchCampaigns = fetch(API_URL + '/campaigns').then(res => res.ok ? res.json() : Promise.reject('Fail campaign fetch')); const fetchNgos = fetch(API_URL + '/ngos').then(res => res.ok ? res.json() : Promise.reject('Fail NGO fetch')); Promise.all([fetchCampaigns, fetchNgos]).then(([campaignData, ngoData]) => { setCampaigns(campaignData); setAllNgos(ngoData); setLoading(false); }).catch(err => { console.error("Failed campaigns page data:", err); setError('Could not load.'); setLoading(false); }); }, []);
+            return (
+                 <div>
+                    <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12"><h2 className="text-4xl font-bold mb-4">All Active Campaigns</h2><p className="text-lg">Support ongoing projects.</p></section>
+                    <section className="campaign-list space-y-8">
+                        {loading && <p className="text-center">Loading...</p>} {error && <p className="text-center text-red-600">{error}</p>}
+                        {!loading && !error && ( Array.isArray(campaigns) && campaigns.length > 0 ? ( <div className="grid md:grid-cols-2 gap-8"> {campaigns.map(campaign => { const progressPercent = campaign.goalAmount > 0 ? Math.min(100, Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)) : 0; const hostingNgo = findNgoByName(allNgos, campaign.host); return ( <article key={campaign.id} className="campaign-card text-left bg-white p-6 rounded-lg border border-gray-300 flex flex-col"><img src={getImageUrl(campaign.imageUrl)} alt={campaign.title} className="w-full h-48 object-cover rounded-lg mb-4" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x400/eee/aaa?text=Error'; }}/><h3 className="text-2xl font-bold">{campaign.title}</h3><p className="text-sm text-gray-600 mb-2">by {campaign.host}</p><p className="my-2 flex-grow">{campaign.description}</p><div className="progress-bar mt-auto"><div className="progress" style={{width: `${progressPercent}%`}}></div></div><p className="progress-text"><strong>₹{(campaign.raisedAmount || 0).toLocaleString('en-IN')}</strong> raised of ₹{campaign.goalAmount.toLocaleString('en-IN')} goal</p>
+                            <Button onClick={() => navigate('donate', { ngo: hostingNgo, campaignId: campaign.id })} variant="primary" className="mt-4 w-full" disabled={!hostingNgo}>Donate to {campaign.host}</Button>
+                            {!hostingNgo && <p className="text-xs text-red-500 mt-1 text-center">Donation link unavailable</p>}
+                        </article> ); })} </div> ) : (<p className="text-center col-span-full">No active campaigns.</p>) )}
+                    </section>
+                </div>
+            );
+        }
+
+        // --- Main App Component (Router) ---
+        function App() {
+            const [page, setPage] = useState({ name: 'home' }); const [loggedInNgo, setLoggedInNgo] = useState(localStorage.getItem('loggedInNgoId'));
+            const navigate = (pageName, params = {}) => { setPage({ name: pageName, ...params }); window.scrollTo(0, 0); };
+            const renderPage = () => {
+                const pageId = page.id;
+                switch (page.name) {
+                    case 'home': return <HomePage />;
+                    case 'ngos': return <NgoListPage />;
+                    case 'profile': return <ProfilePage ngoId={pageId} />;
+                    case 'events': return <EventsPage />;
+                    case 'news': return <NewsPage />;
+                    case 'all-campaigns': return <AllCampaignsPage />;
+                    case 'about': return <AboutPage />;
+                    case 'contact': return <ContactPage />;
+                    case 'register': return <RegisterPage />;
+                    case 'donate': return <DonatePage ngo={page.ngo} campaignId={page.campaignId} />;
+                    case 'admin': return <AdminLoginPage />;
+                    case 'admin-dashboard': return <AdminDashboardPage />;
+                    case 'ngo-login': return <NgoLoginPage />;
+                    case 'ngo-forgot-password': return <NgoForgotPasswordPage />;
+                    case 'ngo-dashboard': return <NgoDashboardPage />;
+                    default: return <HomePage />;
+                }
+            };
+            const contextValue = { navigate, page, loggedInNgo, setLoggedInNgo };
+            return (<NavigationContext.Provider value={contextValue}><Layout>{renderPage()}</Layout></NavigationContext.Provider>);
+        }
+
+        // --- Render the App ---
+        ReactDOM.render(<App />, document.getElementById('root'));
+
+    </script>
+
+    <!-- Chatbot Script -->
+    <script src="//code.tidio.co/ubb7zk6lzkmemeyr9lkfameaoz2yecih.js" async></script>
+
+</body>
+</html>
