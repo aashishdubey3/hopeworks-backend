@@ -37,7 +37,6 @@ const cloudinaryStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'hopeworks', // A folder name in your Cloudinary account
-    format: async (req, file) => 'auto', // auto-format (png, jpg, etc.)
     public_id: (req, file) => file.fieldname + '-' + Date.now(), // Unique name
   },
 });
