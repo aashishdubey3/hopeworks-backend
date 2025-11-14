@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HopeWorks - A Platform for NGOs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>HopeWorks - A Platform for NGOs</title>
+    
     <!-- 1. Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 2. Load React & ReactDOM -->
@@ -16,53 +20,94 @@
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <style>
-        /* Base styles */
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8f8f0; color: #4A5D23; }
-        /* Custom styles */
-        .cause { font-size: 0.9em; color: #555; font-style: italic; }
-        .progress-bar { background-color: #e9ede4; border-radius: 30px; margin: 10px 0; height: 15px; overflow: hidden; }
-        .progress { background-color: #6B8E23; height: 100%; border-radius: 30px; }
-        .progress-text { font-size: 0.9em; font-weight: bold; text-align: center; margin-top: -15px; }
-        .event-date { background-color: #4A5D23; color: #fff; border-radius: 8px; padding: 15px; text-align: center; min-width: 80px; }
-        .event-date .month { display: block; font-size: 0.9em; font-weight: bold; }
-        .event-date .day { display: block; font-size: 2em; font-weight: bold; line-height: 1.1; }
-        .announcement-item { background-color: #ffffff; border-left: 4px solid #6B8E23; padding: 15px 20px; margin-bottom: 15px; border-radius: 0 5px 5px 0; }
-        .announcement-date { font-size: 0.9em; font-weight: bold; color: #555; margin-bottom: 5px; }
-        /* Simple scrollbar */
-        .dashboard-list::-webkit-scrollbar { width: 8px; }
-        .dashboard-list::-webkit-scrollbar-track { background: #e9ede4; border-radius: 4px; }
-        .dashboard-list::-webkit-scrollbar-thumb { background: #6B8E23; border-radius: 4px; }
-        .dashboard-list::-webkit-scrollbar-thumb:hover { background: #4A5D23; }
-        /* Style for file input */
-        input[type="file"] { border: 1px solid #ccc; padding: 6px; border-radius: 4px; background-color: white; }
-        input[type="file"]::file-selector-button { margin-right: 8px; border: none; background: #6B8E23; padding: 6px 10px; border-radius: 4px; color: #fff; cursor: pointer; transition: background .2s ease-in-out; }
-        input[type="file"]::file-selector-button:hover { background: #4A5D23; }
-        /* Image preview */
-        .image-preview { max-width: 100px; max-height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #e9ede4; margin-top: 5px; }
-        .campaign-image-preview { max-width: 200px; max-height: 120px; border-radius: 8px; object-fit: cover; border: 1px solid #ccc; margin-top: 5px; }
-        /* Loading Spinner */
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #6B8E23;
-            margin: 20px auto;
-            animation: spin 1s ease infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* Custom button variant for Danger */
-        .btn-danger {
-            background-color: #dc2626; /* red-600 */
-            color: white;
-        }
-        .btn-danger:hover {
-            background-color: #b91c1c; /* red-700 */
-        }
-    </style>
+    /* ---------------------------------- */
+    /* 1. NEW: BASE & TYPOGRAPHY */
+    /* ---------------------------------- */
+    body { 
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+        background-color: #FFFFFF; /* Crisp white background */
+        color: #2D3748; /* Dark, professional text */
+    }
+
+    /* ---------------------------------- */
+    /* 2. NEW: MODERN HERO SECTION */
+    /* ---------------------------------- */
+    .hero-premium {
+        position: relative; /* Needed for the overlay */
+        background-image: url('https://images.pexels.com/photos/6646918/pexels-photo-6646918.jpeg');
+        background-size: cover;
+        background-position: center;
+        padding: 6rem 1.5rem; /* More padding */
+        border-radius: 0.5rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 3rem;
+        overflow: hidden; /* For border-radius */
+    }
+    /* Dark overlay to make text readable */
+    .hero-premium::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(11, 41, 72, 0.6); /* Dark navy overlay */
+        z-index: 1;
+    }
+    /* Content appears above the overlay */
+    .hero-premium > * {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* ---------------------------------- */
+    /* 3. NEW: MODERN "LIFTED" CARDS */
+    /* ---------------------------------- */
+    .premium-card {
+        background-color: #FFFFFF;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        /* This is the new "premium" shadow */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+    .premium-card:hover {
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        transform: translateY(-5px);
+    }
+    /* Specific override for campaign cards to be text-left */
+    .campaign-card.premium-card {
+        text-align: left;
+    }
+
+    
+
+    h1, h2, h3 { color: #0B2948; /* Darkest Navy for headings */ }
+    
+    .cause { font-size: 0.9em; color: #555; font-style: italic; }
+    .progress-bar { background-color: #F0F4F8; border-radius: 30px; margin: 10px 0; height: 15px; overflow: hidden; }
+    /* NEW: Updated progress bar color */
+    .progress { background-color: #007A78; height: 100%; border-radius: 30px; } 
+    .progress-text { font-size: 0.9em; font-weight: bold; text-align: left; }
+    
+    .event-date { background-color: #0B2948; color: #fff; border-radius: 8px; padding: 15px; text-align: center; min-width: 80px; }
+    .event-date .month { display: block; font-size: 0.9em; font-weight: bold; }
+    .event-date .day { display: block; font-size: 2em; font-weight: bold; line-height: 1.1; }
+    
+    .announcement-item { background-color: #ffffff; border-left: 4px solid #007A78; padding: 15px 20px; margin-bottom: 15px; border-radius: 0 5px 5px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .announcement-date { font-size: 0.9em; font-weight: bold; color: #555; margin-bottom: 5px; }
+
+    /* Scrollbar */
+    .dashboard-list::-webkit-scrollbar { width: 8px; }
+    .dashboard-list::-webkit-scrollbar-track { background: #F0F4F8; border-radius: 4px; }
+    .dashboard-list::-webkit-scrollbar-thumb { background: #007A78; border-radius: 4px; }
+    .dashboard-list::-webkit-scrollbar-thumb:hover { background: #005A58; }
+    
+    /* ... (rest of your spinner, image-preview, etc. styles) ... */
+    /* (Your existing .spinner, .btn-danger, .image-preview, input styles are fine to keep) */
+
+    /* [Keep your existing styles for .spinner, .btn-danger, input[type="file"], .image-preview, etc. here] */
+    
+</style>
 </head>
 <body class="max-w-4xl mx-auto p-5">
 
@@ -80,43 +125,134 @@
         function useNavigation() { return useContext(NavigationContext); }
 
         // --- Reusable Components ---
-        function Header() {
+    function Header() {
             const { navigate, loggedInNgo, setLoggedInNgo } = useNavigation();
             const [dropdownOpen, setDropdownOpen] = useState(false);
-            const handleLogout = () => { localStorage.removeItem('loggedInNgoId'); setLoggedInNgo(null); navigate('home'); };
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // NEW: State for mobile menu
+            
+            const handleLogout = () => { 
+                localStorage.removeItem('loggedInNgoId'); 
+                setLoggedInNgo(null); 
+                navigate('home'); 
+                setIsMobileMenuOpen(false); // Close menu on logout
+            };
+            
+            const goHome = (e) => {
+                e.preventDefault();
+                navigate('home');
+                setIsMobileMenuOpen(false); // Close menu on nav
+            };
+
+            // NEW: Helper for all mobile navigation
+            const mobileNavigate = (page) => {
+                navigate(page);
+                setIsMobileMenuOpen(false);
+            };
+
             return (
-                <header className="flex flex-col sm:flex-row justify-between items-center border-b border-gray-300 mb-10 pb-5">
-                    <h1 className="text-3xl font-bold text-[#3D402D] mb-4 sm:mb-0"><a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }}>HopeWorks Platform</a></h1>
-                    <nav><ul className="flex items-center gap-2 sm:gap-4">
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('home'); }} className="p-2 rounded-md hover:bg-[#e9ede4]">Home</a></li>
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('ngos'); }} className="p-2 rounded-md hover:bg-[#e9ede4]">Find NGOs</a></li>
-                        <li className="relative">
-                            <button onClick={() => setDropdownOpen(!dropdownOpen)} className="p-2 rounded-md hover:bg-[#e9ede4]">Events, News & Campaigns ▾</button>
-                            {dropdownOpen && ( <div className="absolute left-0 mt-2 w-52 bg-[#fdfdf5] border border-gray-300 rounded-lg shadow-lg z-10">
-                                <a href="#" onClick={(e) => { e.preventDefault(); navigate('news'); setDropdownOpen(false); }} className="block px-4 py-2 hover:bg-[#e9ede4]">Latest News</a>
-                                <a href="#" onClick={(e) => { e.preventDefault(); navigate('events'); setDropdownOpen(false); }} className="block px-4 py-2 hover:bg-[#e9ede4]">Upcoming Events</a>
-                                <a href="#" onClick={(e) => { e.preventDefault(); navigate('all-campaigns'); setDropdownOpen(false); }} className="block px-4 py-2 hover:bg-[#e9ede4]">All Campaigns</a>
-                            </div>)}
-                        </li>
-                        {loggedInNgo ? (<>
-                            <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('ngo-dashboard'); }} className="p-2 rounded-md hover:bg-[#e9ede4]">Dashboard</a></li>
-                            <li><button onClick={handleLogout} className="p-2 rounded-md text-red-600 hover:bg-[#e9ede4]">Logout</button></li>
-                        </>) : (<li><a href="#" onClick={(e) => { e.preventDefault(); navigate('donate', {}); }} className="px-4 py-2 rounded-md bg-[#6B8E23] text-white hover:bg-[#4A5D23]">Donate</a></li>)}
-                    </ul></nav>
+                <header className="border-b border-gray-300 mb-10 pb-5">
+                    <div className="flex justify-between items-center">
+                        {/* 1. Logo/Title (Stays the same) */}
+                        <h1 className="text-3xl font-bold">
+                            <a href="#" onClick={goHome}>HopeWorks </a>
+                        </h1>
+
+                        {/* 2. NEW: Desktop Menu (Hides on mobile) */}
+                        <nav className="hidden sm:block">
+                            <ul className="flex items-center gap-2 sm:gap-4">
+                                {/* Home Button */}
+                                <li>
+                                    <Button onClick={goHome} variant="primary" className="py-2 px-4">
+                                        Home
+                                    </Button>
+                                </li>
+                                {/* Community Button */}
+                                <li className="relative">
+                                    <Button 
+                                        onClick={() => setDropdownOpen(!dropdownOpen)} 
+                                        variant="secondary" 
+                                        className="py-2 px-4"
+                                    >
+                                        Community ▾
+                                    </Button>
+                                    {dropdownOpen && ( 
+                                        <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                            <a href="#" onClick={(e) => { e.preventDefault(); navigate('news'); setDropdownOpen(false); }} className="block px-4 py-2 hover:bg-[#F0F4F8]">Latest News</a>
+                                            <a href="#" onClick={(e) => { e.preventDefault(); navigate('events'); setDropdownOpen(false); }} className="block px-4 py-2 hover:bg-[#F0F4F8]">Upcoming Events</a>
+                                            <a href="#" onClick={(e) => { e.preventDefault(); navigate('all-campaigns'); setDropdownOpen(false); }} className="block px-4 py-2 hover:bg-[#F0F4F8]">All Campaigns</a>
+                                        </div>
+                                    )}
+                                </li>
+                                {/* Dashboard/Logout Links */}
+                                {loggedInNgo && (<>
+                                    <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('ngo-dashboard'); }} className="p-2 rounded-md hover:bg-[#F0F4F8]">Dashboard</a></li>
+                                    <li><button onClick={handleLogout} className="p-2 rounded-md text-red-600 hover:bg-[#F0F4F8]">Logout</button></li>
+                                </>)}
+                            </ul>
+                        </nav>
+
+                        {/* 3. NEW: Hamburger Menu Button (Shows on mobile) */}
+                        <div className="sm:hidden">
+                            <button 
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="p-2 rounded-md hover:bg-[#F0F4F8] focus:outline-none focus:ring-2 focus:ring-gray-400"
+                                aria-label="Open menu"
+                            >
+                                {/* Simple Hamburger Icon SVG */}
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 4. NEW: Mobile Menu (Dropdown for mobile) */}
+                    {isMobileMenuOpen && (
+                        <nav className="sm:hidden mt-4">
+                            <ul className="flex flex-col gap-2">
+                                <li>
+                                    <Button onClick={goHome} variant="primary" className="w-full">Home</Button>
+                                </li>
+                                <li>
+                                    <Button onClick={() => mobileNavigate('all-campaigns')} variant="secondary" className="w-full">All Campaigns</Button>
+                                </li>
+                                <li>
+                                    <Button onClick={() => mobileNavigate('events')} variant="secondary" className="w-full">Upcoming Events</Button>
+                                </li>
+                                <li>
+                                    <Button onClick={() => mobileNavigate('news')} variant="secondary" className="w-full">Latest News</Button>
+                                </li>
+                                
+                                {loggedInNgo ? (<>
+                                    <hr className="my-2" />
+                                    <li>
+                                        <Button onClick={() => mobileNavigate('ngo-dashboard')} variant="secondary" className="w-full">Dashboard</Button>
+                                    </li>
+                                    <li>
+                                        <button onClick={handleLogout} className="w-full p-2 rounded-md text-red-600 hover:bg-[#F0F4F8]">Logout</button>
+                                    </li>
+                                </>) : (
+                                    null
+                                )}
+                            </ul>
+                        </nav>
+                    )}
                 </header>
             );
         }
+            
         function Footer() {
             const { navigate, loggedInNgo } = useNavigation();
             return (
-                <footer className="text-center mt-12 pt-5 border-t border-gray-300 text-gray-600">
+                /* NEW: Dark background, light text, and NO rounded corners */
+                <footer className="text-center mt-12 p-10 bg-[#0B2948] text-gray-400">
                     <div className="flex justify-center flex-wrap gap-4 md:gap-6 mb-4">
-                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('about'); }} className="font-bold text-[#4A5D23]">About Us</a>
-                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('contact'); }} className="font-bold text-[#4A5D23]">Contact Us</a>
-                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('admin'); }} className="font-bold text-[#4A5D23]">Admin</a>
-                        {!loggedInNgo && (<a href="#" onClick={(e) => { e.preventDefault(); navigate('ngo-login'); }} className="font-bold text-[#4A5D23]">NGO Login</a>)}
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('about'); }} className="font-bold text-white hover:text-gray-300 transition-colors">About Us</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('contact'); }} className="font-bold text-white hover:text-gray-300 transition-colors">Contact Us</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigate('admin'); }} className="font-bold text-white hover:text-gray-300 transition-colors">Admin</a>
+                        {!loggedInNgo && (<a href="#" onClick={(e) => { e.preventDefault(); navigate('ngo-login'); }} className="font-bold text-white hover:text-gray-300 transition-colors">NGO Login</a>)}
                     </div>
-                    <p>&copy; 2025 HopeWorks Platform. All Rights Reserved.</p>
+                    <p>© 2025 HopeWorks Platform. All Rights Reserved.</p>
                 </footer>
             );
         }
@@ -124,28 +260,30 @@
         function Button({ children, onClick, type = 'button', variant = 'primary', className = '', disabled = false }) {
             const baseStyles = "inline-flex items-center justify-center px-6 py-3 rounded-md transition-colors";
             let variantStyles = '';
-            switch(variant) {
-                case 'secondary':
-                    variantStyles = 'bg-transparent text-[#6B8E23] border border-[#6B8E23] hover:bg-[#e9ede4]';
-                    break;
-                case 'danger':
-                    variantStyles = 'bg-red-600 text-white hover:bg-red-700';
-                    break;
-                default: // primary
-                    variantStyles = 'bg-[#6B8E23] text-white hover:bg-[#4A5D23]';
-            }
+           switch(variant) {
+    case 'secondary':
+        /* NEW: Updated secondary button */
+        variantStyles = 'bg-transparent text-[#007A78] border border-[#007A78] hover:bg-[#F0F4F8]';
+        break;
+    case 'danger':
+        variantStyles = 'bg-red-600 text-white hover:bg-red-700';
+        break;
+    default: // primary
+        /* NEW: Updated primary button with Deep Teal */
+        variantStyles = 'bg-[#007A78] text-white hover:bg-[#005A58]'; 
+}
             return (<button type={type} onClick={onClick} className={`${baseStyles} ${variantStyles} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={disabled}>{children}</button>);
         }
         function FormInput({ label, type = 'text', value, onChange, name, required, disabled, children, hint, accept }) {
             const inputProps = { value: type !== 'file' ? value : undefined, onChange, name, required, disabled, accept, className: "w-full p-3 border border-gray-300 rounded-md mt-1 disabled:bg-gray-100" };
-             const fileInputClasses = "w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#6B8E23] hover:file:bg-violet-100 disabled:opacity-50 disabled:pointer-events-none";
+             const fileInputClasses = "w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#005A9C] hover:file:bg-violet-100 disabled:opacity-50 disabled:pointer-events-none";
             return (<p><label className="font-bold block mb-1">{label}:</label>{ type === 'textarea' ? (<textarea {...inputProps} rows="4"></textarea>) : type === 'select' ? (<select {...inputProps}>{children}</select>) : type === 'file' ? (<input type="file" {...inputProps} className={fileInputClasses} />) : (<input type={type} {...inputProps} />)}{hint && <span className="text-sm text-gray-500 block mt-1">{hint}</span>}</p>);
         }
         function DashboardCard({ title, list, renderItem, className = '' }) {
-            return (<div className={`bg-white p-6 rounded-lg border border-gray-300 ${className}`}> <h3 className="text-xl font-bold mb-4 pb-2 border-b border-gray-200">{title}</h3> <ul className="space-y-3 max-h-64 overflow-y-auto dashboard-list pr-2">{Array.isArray(list) && list.length > 0 ? (list.map((item, index) => (<li key={item?.id || index} className="pb-2 border-b border-gray-100 last:border-b-0">{renderItem(item)}</li>))) : (<li>No data yet.</li>)}</ul></div>);
+            return (<div className={`bg-white p-6 rounded border border-gray-300 ${className}`}> <h3 className="text-xl font-bold mb-4 pb-2 border-b border-gray-200">{title}</h3> <ul className="space-y-3 max-h-64 overflow-y-auto dashboard-list pr-2">{Array.isArray(list) && list.length > 0 ? (list.map((item, index) => (<li key={item?.id || index} className="pb-2 border-b border-gray-100 last:border-b-0">{renderItem(item)}</li>))) : (<li>No data yet.</li>)}</ul></div>);
         }
         function Spinner({ primary = true }) {
-            const color = primary ? 'text-white' : 'text-[#6B8E23]';
+            const color = primary ? 'text-white' : 'text-[#005A9C]';
             return (
                 <svg className={`animate-spin -ml-1 mr-3 h-5 w-5 ${color}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -180,14 +318,15 @@
         // --- Page Components ---
 
         // --- HomePage ---
-        function HomePage() {
+        // --- HomePage ---
+       function HomePage() {
             const { navigate } = useNavigation();
             const [campaigns, setCampaigns] = useState([]); const [campaignsLoading, setCampaignsLoading] = useState(true); const [campaignsError, setCampaignsError] = useState(null);
             const [featuredNgos, setFeaturedNgos] = useState([]); const [featuredNgosLoading, setFeaturedNgosLoading] = useState(true); const [featuredNgosError, setFeaturedNgosError] = useState(null);
             const [allNgos, setAllNgos] = useState([]);
+            const [searchTerm, setSearchTerm] = useState(''); 
             const isMounted = useRef(true);
-
-            useEffect(() => {
+             useEffect(() => {
                 isMounted.current = true;
                 setCampaignsLoading(true); setFeaturedNgosLoading(true); setCampaignsError(null); setFeaturedNgosError(null);
                 const fetchCampaigns = fetch(API_URL + '/campaigns').then(res => res.ok ? res.json() : Promise.reject('Failed campaign fetch'));
@@ -218,7 +357,26 @@
 
             return (
                 <div>
-                    <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12"><h2 className="text-4xl font-bold mb-4">Amplify Your Impact.</h2><p className="text-lg mb-6">Discover and support trusted NGOs.</p><Button onClick={() => navigate('ngos')}>Find an NGO</Button></section>
+                    {/* 1. Hero Section (Looks Good) */}
+                    <section className="hero-premium">
+                        <h2 className="text-4xl md:text-5xl font-black mb-4">Amplify Your Impact.</h2>
+                        <p className="text-lg md:text-xl mb-6">Discover and support trusted NGOs.</p>
+                        
+                        <form onSubmit={(e) => { e.preventDefault(); navigate('ngos', { initialSearch: searchTerm }); }} className="mt-8 max-w-lg mx-auto">
+                            <div className="flex rounded-md shadow-sm">
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Search for an NGO or cause..."
+                                    className="flex-1 block w-full rounded-l-md p-3 border border-gray-300 text-gray-900"
+                                />
+                                <Button type="submit" variant="primary" className="rounded-l-none px-4 py-2">Search</Button>
+                            </div>
+                        </form>
+                    </section>
+
+                    {/* 2. Organizations Spotlight (Looks Good) */}
                     <section className="mb-12">
                         <h2 className="text-3xl font-bold mb-6 text-center">Organizations Spotlight</h2>
                         {featuredNgosLoading && <p className="text-center">Loading organizations...</p>}
@@ -227,7 +385,7 @@
                             <div className="grid md:grid-cols-2 gap-6">
                                 {Array.isArray(featuredNgos) && featuredNgos.length > 0 ? (
                                     featuredNgos.map(ngo => (
-                                        <article key={ngo.id} className="border border-gray-300 p-5 rounded-lg text-center bg-white">
+                                        <article key={ngo.id} className="premium-card text-center">
                                             <img src={getImageUrl(ngo.logo)} alt={`${ngo.name} Logo`} className="w-20 h-20 rounded-full object-cover mx-auto mb-4"/>
                                             <h3 className="text-2xl font-bold">{ngo.name}</h3>
                                             <p className="cause">{ngo.cause}</p>
@@ -239,40 +397,79 @@
                             </div>
                         )}
                     </section>
-                    <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12">
-                        <h2 className="text-3xl font-bold mb-4">Active Campaigns</h2><p className="mb-6">Support time-sensitive projects.</p>
+                    
+                    {/* 3. Restyled "Active Campaigns" section */}
+                    <section className="mb-12">
+                        <h2 className="text-3xl font-bold mb-4 text-center">Active Campaigns</h2>
+                        <p className="text-center text-lg text-gray-600 mb-6">Support time-sensitive projects.</p>
+                        
                         {campaignsLoading && <p>Loading campaigns...</p>}
                         {campaignsError && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-left max-w-lg mx-auto" role="alert"><strong className="font-bold">Error: </strong><span className="block sm:inline">{campaignsError}</span></div>)}
+                        
                         {!campaignsLoading && !campaignsError && (<>
-                            <div className="grid md:grid-cols-2 gap-6 bg-white p-6 rounded-lg mt-4">
-                                {Array.isArray(campaigns) && campaigns.length > 0 ? (campaigns.map(campaign => { const progressPercent = campaign.goalAmount > 0 ? Math.min(100, Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)) : 0; const hostingNgo = findNgoByName(allNgos, campaign.host); return (<article key={campaign.id} className="campaign-card text-left"><img src={getImageUrl(campaign.imageUrl)} alt={campaign.title} className="w-full h-48 object-cover rounded-lg mb-4" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x400/eee/aaa?text=Error'; }}/><h3 className="text-2xl font-bold">{campaign.title}</h3><p className="text-sm text-gray-600 mb-2">by {campaign.host}</p><p className="my-2">{campaign.description}</p><div className="progress-bar"><div className="progress" style={{width: `${progressPercent}%`}}></div></div><p className="progress-text"><strong>₹{(campaign.raisedAmount || 0).toLocaleString('en-IN')}</strong> raised of ₹{campaign.goalAmount.toLocaleString('en-IN')} goal</p>
-                                    <Button onClick={() => navigate('donate', { ngo: hostingNgo, campaignId: campaign.id })} variant="primary" className="mt-4" disabled={!hostingNgo}>Donate to {campaign.host}</Button>
-                                    {!hostingNgo && <p className="text-xs text-red-500 mt-1">Donation link unavailable</p>}
-                                </article>); })) : (<p className="col-span-full">No featured campaigns.</p>)}
+                            <div className="grid md:grid-cols-2 gap-6 mt-4">
+                                {Array.isArray(campaigns) && campaigns.length > 0 ? (campaigns.map(campaign => { 
+                                    const progressPercent = campaign.goalAmount > 0 ? Math.min(100, Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)) : 0; 
+                                    const hostingNgo = findNgoByName(allNgos, campaign.host); 
+                                    return (
+                                        <article key={campaign.id} className="campaign-card premium-card text-left">
+                                            <img src={getImageUrl(campaign.imageUrl)} alt={campaign.title} className="w-full h-48 object-cover rounded-lg mb-4" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x400/eee/aaa?text=Error'; }}/>
+                                            {/* NEW: Smaller title text */}
+                                            <h3 className="text-xl font-bold">{campaign.title}</h3>
+                                            <p className="text-sm text-gray-600 mb-2">by {campaign.host}</p>
+                                            {/* NEW: Smaller description text */}
+                                            <p className="my-2 text-sm text-gray-700">{campaign.description}</p>
+                                            
+                                            {/* NEW: Fixed progress bar layout */}
+                                            <div className="progress-bar mt-2"><div className="progress" style={{width: `${progressPercent}%`}}></div></div>
+                                            <p className="progress-text mt-1"><strong>₹{(campaign.raisedAmount || 0).toLocaleString('en-IN')}</strong> raised of ₹{campaign.goalAmount.toLocaleString('en-IN')} goal</p>
+                                            
+                                            <Button onClick={() => navigate('donate', { ngo: hostingNgo, campaignId: campaign.id })} variant="primary" className="mt-4" disabled={!hostingNgo}>Donate to {campaign.host}</Button>
+                                            {!hostingNgo && <p className="text-xs text-red-500 mt-1">Donation link unavailable</p>}
+                                        </article>
+                                    ); 
+                                })) : (<p className="col-span-full">No featured campaigns.</p>)}
                             </div>
-                            <Button onClick={() => navigate('all-campaigns')} variant="secondary" className="mt-6">View All Campaigns</Button>
+                            <div className="text-center">
+                                <Button onClick={() => navigate('all-campaigns')} variant="secondary" className="mt-6">View All Campaigns</Button>
+                            </div>
                         </>)}
                     </section>
-                    <section className="cta-banner bg-[#e9ede4] p-10 rounded-lg text-center mb-12"><h2 className="text-3xl font-bold mb-4">Are you an NGO?</h2><p className="text-lg mb-6">Join our network.</p><Button onClick={() => navigate('register')}>Register Now</Button></section>
+                    
+                    {/* 4. NEW: Restyled "Are you an NGO?" banner (now TEAL) */ }
+                   {/* 4. NEW: Restyled "Are you an NGO?" banner (now TEAL) */ }
+                    <section className="cta-banner bg-[#007A78] text-white p-10 rounded-lg text-center mb-12">
+                        <h2 className="text-3xl font-bold mb-4">Are you an NGO?</h2>
+                        <p className="text-lg mb-6 text-gray-200">Join our network.</p>
+                        
+                        {/* THIS IS THE FIX: */}
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => navigate('register')} 
+                            className="bg-white border-white text-[#007A78] font-bold hover:bg-gray-100 hover:border-gray-100"
+                        >
+                            Register Now
+                        </Button>
+                    </section>
                 </div>
             );
         }
+       // --- NgoListPage ---
 
-        // --- NgoListPage ---
-        function NgoListPage() {
-            const { navigate } = useNavigation();
-            const [ngos, setNgos] = useState([]); const [searchTerm, setSearchTerm] = useState(''); const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
+     function NgoListPage({ initialSearch }) {
+         const { navigate } = useNavigation();
+         const [ngos, setNgos] = useState([]); const [searchTerm, setSearchTerm] = useState(initialSearch || ''); const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
             useEffect(() => { fetch(API_URL + '/ngos').then(res => res.json()).then(data => { setNgos(data); setLoading(false); }).catch(err => { console.error(err); setError('Could not load NGOs.'); setLoading(false); }); }, []);
-            const filteredNgos = Array.isArray(ngos) ? ngos.filter(ngo => ngo.name.toLowerCase().includes(searchTerm.toLowerCase()) || ngo.cause.toLowerCase().includes(searchTerm.toLowerCase())) : [];
-            return (
-                <div>
-                    <section className="mb-8"> <h2 className="text-3xl font-bold mb-4">Find an Organization</h2> <input type="text" id="ngoSearch" placeholder="Search by name or cause" className="w-full p-3 border border-gray-300 rounded-md" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /> </section>
+         const filteredNgos = Array.isArray(ngos) ? ngos.filter(ngo => ngo.name.toLowerCase().includes(searchTerm.toLowerCase()) || ngo.cause.toLowerCase().includes(searchTerm.toLowerCase())) : [];
+     return (
+         <div>
+           <h2 className="text-3xl font-bold mb-8">Search Results</h2>
+
                     <section className="ngo-directory">
                         {loading && <p className="text-center">Loading NGOs...</p>}
                         {error && <p className="text-center text-red-600">{error}</p>}
                         {!loading && !error && ( <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredNgos.length > 0 ? ( filteredNgos.map(ngo => (<article key={ngo.id} className="border border-gray-300 p-5 rounded-lg text-center bg-white"><img src={getImageUrl(ngo.logo)} alt={`${ngo.name} Logo`} className="w-20 h-20 rounded-full object-cover mx-auto mb-4"/><h3 className="text-2xl font-bold">{ngo.name}</h3><p className="cause">{ngo.cause}</p><p className="text-sm text-gray-500 mt-2 truncate">{ngo.address}</p><div className="mt-4"><Button onClick={() => navigate('profile', { id: ngo.id })} variant="secondary">View Profile</Button></div></article>))) : (<p className="text-center col-span-full">No NGOs match your search.</p>)}
-                        </div>)}
+                           {filteredNgos.length > 0 ? ( filteredNgos.map(ngo => (<article key={ngo.id} className="premium-card"><img src={getImageUrl(ngo.logo)} alt={`${ngo.name} Logo`} className="w-20 h-20 rounded-full object-cover mx-auto mb-4"/><h3 className="text-2xl font-bold">{ngo.name}</h3><p className="cause">{ngo.cause}</p><p className="text-sm text-gray-500 mt-2 truncate">{ngo.address}</p><div className="mt-4"><Button onClick={() => navigate('profile', { id: ngo.id })} variant="secondary">View Profile</Button></div></article>))) : (<p className="text-center col-span-full">No NGOs match your search.</p>)}</div>)}
                     </section>
                 </div>
             );
@@ -289,23 +486,23 @@
 
             return (
                 <div>
-                    <section className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-white rounded-lg border border-gray-300 mb-8"><img id="profile-logo" src={getImageUrl(ngo.logo)} alt={`${ngo.name} Logo`} className="w-32 h-32 rounded-full object-cover"/><div><h2 id="profile-name" className="text-4xl font-bold">{ngo.name}</h2><p className="cause text-2xl" id="profile-cause">{ngo.cause}</p></div></section>
+                    <section className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-white rounded border border-gray-300 mb-8"><img id="profile-logo" src={getImageUrl(ngo.logo)} alt={`${ngo.name} Logo`} className="w-32 h-32 rounded-full object-cover"/><div><h2 id="profile-name" className="text-4xl font-bold">{ngo.name}</h2><p className="cause text-2xl" id="profile-cause">{ngo.cause}</p></div></section>
                     <div className="grid md:grid-cols-3 gap-8">
                         <div className="md:col-span-2 space-y-8">
-                            <section className="bg-white p-6 rounded-lg border border-gray-300"><h3 className="text-2xl font-bold mb-4">About Us</h3><p id="profile-description" className="text-lg leading-relaxed">{ngo.description}</p></section>
-                            <section className="bg-white p-6 rounded-lg border border-gray-300"><h3 className="text-2xl font-bold mb-4">Active Campaigns</h3>{relatedDataLoading ? (<p>Loading campaigns...</p>) : Array.isArray(ngoCampaigns) && ngoCampaigns.length > 0 ? ( <div className="space-y-6">{ngoCampaigns.map(campaign => { const progressPercent = campaign.goalAmount > 0 ? Math.min(100, Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)) : 0; return (<article key={campaign.id} className="campaign-card text-left border-b pb-4 last:border-b-0"><img src={getImageUrl(campaign.imageUrl)} alt={campaign.title} className="w-full h-40 object-cover rounded-lg mb-3" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x400/eee/aaa?text=Error'; }}/><h4 className="text-xl font-bold">{campaign.title}</h4><p className="my-1 text-gray-700">{campaign.description}</p><div className="progress-bar my-1"><div className="progress" style={{width: `${progressPercent}%`}}></div></div><p className="progress-text"><strong>₹{(campaign.raisedAmount || 0).toLocaleString('en-IN')}</strong> of ₹{campaign.goalAmount.toLocaleString('en-IN')} goal</p>
+                            <section className="bg-white p-6 rounded border border-gray-300"><h3 className="text-2xl font-bold mb-4">About Us</h3><p id="profile-description" className="text-lg leading-relaxed">{ngo.description}</p></section>
+                            <section className="bg-white p-6 rounded border border-gray-300"><h3 className="text-2xl font-bold mb-4">Active Campaigns</h3>{relatedDataLoading ? (<p>Loading campaigns...</p>) : Array.isArray(ngoCampaigns) && ngoCampaigns.length > 0 ? ( <div className="space-y-6">{ngoCampaigns.map(campaign => { const progressPercent = campaign.goalAmount > 0 ? Math.min(100, Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)) : 0; return (<article key={campaign.id} className="campaign-card text-left border-b pb-4 last:border-b-0"><img src={getImageUrl(campaign.imageUrl)} alt={campaign.title} className="w-full h-40 object-cover rounded mb-3" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x400/eee/aaa?text=Error'; }}/><h4 className="text-xl font-bold">{campaign.title}</h4><p className="my-1 text-gray-700">{campaign.description}</p><div className="progress-bar my-1"><div className="progress" style={{width: `${progressPercent}%`}}></div></div><p className="progress-text"><strong>₹{(campaign.raisedAmount || 0).toLocaleString('en-IN')}</strong> of ₹{campaign.goalAmount.toLocaleString('en-IN')} goal</p>
                                 <Button onClick={() => navigate('donate', { ngo: ngo, campaignId: campaign.id })} variant="secondary" className="mt-2 py-1 px-3 text-sm">Donate Now</Button>
                             </article>); })}</div>) : (<p>No active campaigns.</p>)}</section>
-                            <section className="bg-white p-6 rounded-lg border border-gray-300"><h3 className="text-2xl font-bold mb-4">Upcoming Events</h3>{relatedDataLoading ? (<p>Loading events...</p>) : Array.isArray(ngoEvents) && ngoEvents.length > 0 ? (<ul className="space-y-4">{ngoEvents.map(event => (<li key={event.id} className="pb-3 border-b last:border-b-0"><p className="font-bold text-lg">{event.title}</p><p className="text-sm text-gray-600 mb-1">Date: {formatDate(event.date)}</p><p>{event.description}</p></li>))}</ul>) : (<p>No upcoming events.</p>)}</section>
-                            <section className="bg-white p-6 rounded-lg border border-gray-300"><h3 className="text-2xl font-bold mb-4">Latest News</h3>{relatedDataLoading ? (<p>Loading news...</p>) : Array.isArray(ngoNews) && ngoNews.length > 0 ? (<ul className="space-y-4">{ngoNews.map(item => (<li key={item.id} className="pb-3 border-b last:border-b-0"><p className="font-bold text-lg">{item.title}</p><p className="text-sm text-gray-600 mb-1">Posted: {formatDate(item.date)}</p><p>{item.content}</p></li>))}</ul>) : (<p>No recent news.</p>)}</section>
+                            <section className="bg-white p-6 rounded border border-gray-300"><h3 className="text-2xl font-bold mb-4">Upcoming Events</h3>{relatedDataLoading ? (<p>Loading events...</p>) : Array.isArray(ngoEvents) && ngoEvents.length > 0 ? (<ul className="space-y-4">{ngoEvents.map(event => (<li key={event.id} className="pb-3 border-b last:border-b-0"><p className="font-bold text-lg">{event.title}</p><p className="text-sm text-gray-600 mb-1">Date: {formatDate(event.date)}</p><p>{event.description}</p></li>))}</ul>) : (<p>No upcoming events.</p>)}</section>
+                            <section className="bg-white p-6 rounded border border-gray-300"><h3 className="text-2xl font-bold mb-4">Latest News</h3>{relatedDataLoading ? (<p>Loading news...</p>) : Array.isArray(ngoNews) && ngoNews.length > 0 ? (<ul className="space-y-4">{ngoNews.map(item => (<li key={item.id} className="pb-3 border-b last:border-b-0"><p className="font-bold text-lg">{item.title}</p><p className="text-sm text-gray-600 mb-1">Posted: {formatDate(item.date)}</p><p>{item.content}</p></li>))}</ul>) : (<p>No recent news.</p>)}</section>
                         </div>
                         <aside className="md:col-span-1 space-y-8">
-                            <div className="bg-white p-6 rounded-lg border border-gray-300 h-fit">
+                            <div className="bg-white p-6 rounded border border-gray-300 h-fit">
                                 <h3 className="text-2xl font-bold mb-4">Contact & Location</h3>
                                 <p className="mb-2"><strong>Email:</strong> <span id="profile-email">{ngo.email}</span></p>
                                 {ngo.phone && <p className="mb-2"><strong>Phone:</strong> <span id="profile-phone">{ngo.phone}</span></p>}
                                 {ngo.address && <p className="mb-2"><strong>Address:</strong> <span id="profile-address">{ngo.address}</span></p>}
-                                {ngo.address && ( <a href={getDirectionsLink()} target="_blank" rel="noopener noreferrer" className="text-sm text-[#6B8E23] hover:underline mb-4 inline-block"> Get Directions &rarr; </a> )}
+                                {ngo.address && ( <a href={getDirectionsLink()} target="_blank" rel="noopener noreferrer" className="text-sm text-[#005A9C] hover:underline mb-4 inline-block"> Get Directions &rarr; </a> )}
                                 <p className="text-sm text-gray-500 mb-4">Use the link above to find us on Google Maps.</p>
                                 {ngo.upiId ? (<Button onClick={() => navigate('donate', { ngo: ngo })} variant="primary" className="w-full text-center mt-4">Donate to {ngo.name}</Button>) : (<Button onClick={() => navigate('donate', {})} variant="primary" className="w-full text-center mt-4">Donate to HopeWorks</Button>)}
                             </div>
@@ -319,7 +516,7 @@
         function EventsPage() {
              const [events, setEvents] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
              useEffect(() => { setLoading(true); setError(null); fetch(API_URL + '/events').then(res => { if (!res.ok) throw new Error('Failed to fetch events'); return res.json(); }).then(data => { setEvents(data); setLoading(false); }).catch(err => { console.error(err); setError(err.message || 'Could not load events.'); setLoading(false); }); }, []);
-            return ( <div> <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12"> <h2 className="text-4xl font-bold mb-4">Upcoming Events</h2> <p className="text-lg">Find workshops, fundraisers, and community drives.</p> </section> <section className="event-list space-y-6"> {loading && <p className="text-center">Loading events...</p>} {error && <p className="text-center text-red-600">{error}</p>} {!loading && !error && ( Array.isArray(events) && events.length > 0 ? ( events.map(event => { const date = new Date(event.date); const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase(); const day = date.getDate(); return ( <article key={event.id} className="event-item flex items-center gap-6 bg-white p-5 rounded-lg border border-gray-300"> <div className="event-date"> <span className="month">{month}</span> <span className="day">{day}</span> </div> <div className="event-details"> <h3 className="text-2xl font-bold">{event.title}</h3> <p><strong>Hosted by:</strong> {event.host}</p> <p>{event.description}</p> </div> </article> ); }) ) : (<p className="text-center col-span-full">No upcoming events.</p>) )} </section> </div> );
+            return ( <div> <section className="hero bg-[#e9ede4] p-10 rounded text-center mb-12"> <h2 className="text-4xl font-bold mb-4">Upcoming Events</h2> <p className="text-lg">Find workshops, fundraisers, and community drives.</p> </section> <section className="event-list space-y-6"> {loading && <p className="text-center">Loading events...</p>} {error && <p className="text-center text-red-600">{error}</p>} {!loading && !error && ( Array.isArray(events) && events.length > 0 ? ( events.map(event => { const date = new Date(event.date); const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase(); const day = date.getDate(); return ( <article key={event.id} className="event-item flex items-center gap-6 bg-white p-5 rounded border border-gray-300"> <div className="event-date"> <span className="month">{month}</span> <span className="day">{day}</span> </div> <div className="event-details"> <h3 className="text-2xl font-bold">{event.title}</h3> <p><strong>Hosted by:</strong> {event.host}</p> <p>{event.description}</p> </div> </article> ); }) ) : (<p className="text-center col-span-full">No upcoming events.</p>) )} </section> </div> );
          }
 
         // --- NewsPage ---
@@ -327,7 +524,7 @@
             const [news, setNews] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
              useEffect(() => { setLoading(true); setError(null); fetch(API_URL + '/news').then(res => { if (!res.ok) throw new Error('Failed to fetch news'); return res.json(); }).then(data => { setNews(data); setLoading(false); }).catch(err => { console.error(err); setError(err.message || 'Could not load news.'); setLoading(false); }); }, []);
             const formatDate = (dateString) => { const date = new Date(dateString); return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); };
-            return ( <div> <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12"> <h2 className="text-4xl font-bold mb-4">Latest News & Announcements</h2> <p className="text-lg">Updates and success stories from NGOs.</p> </section> <div className="announcement-list space-y-4"> {loading && <p className="text-center">Loading news...</p>} {error && <p className="text-center text-red-600">{error}</p>} {!loading && !error && ( Array.isArray(news) && news.length > 0 ? ( news.map(item => ( <article key={item.id} className="announcement-item"> <p className="announcement-date">{formatDate(item.date)}</p> <h3 className="text-xl font-bold">{item.title} (from {item.host})</h3> <p>{item.content}</p> </article> )) ) : (<p className="text-center">No news yet.</p>) )} </div> </div> );
+            return ( <div> <section className="hero bg-[#e9ede4] p-10 rounded text-center mb-12"> <h2 className="text-4xl font-bold mb-4">Latest News & Announcements</h2> <p className="text-lg">Updates and success stories from NGOs.</p> </section> <div className="announcement-list space-y-4"> {loading && <p className="text-center">Loading news...</p>} {error && <p className="text-center text-red-600">{error}</p>} {!loading && !error && ( Array.isArray(news) && news.length > 0 ? ( news.map(item => ( <article key={item.id} className="announcement-item"> <p className="announcement-date">{formatDate(item.date)}</p> <h3 className="text-xl font-bold">{item.title} (from {item.host})</h3> <p>{item.content}</p> </article> )) ) : (<p className="text-center">No news yet.</p>) )} </div> </div> );
         }
 
         // --- AboutPage ---
@@ -348,7 +545,7 @@
                 } catch (error) { console.error('Volunteer submit fail:', error); if (isMounted.current) alert('Could not connect.'); }
                 finally { if (isMounted.current) setIsLoading(false); }
             };
-            return ( <div> <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12"><h2 className="text-4xl font-bold mb-4">From a Single Hand to a Thousand Helpers.</h2><p className="text-lg">Our mission: connect impactful NGOs with supporters like you.</p></section> <section className="mb-12 bg-white p-6 rounded-lg border border-gray-300"><h3 className="text-3xl font-bold mb-4">Our Story</h3><p className="mb-4">HopeWorks started small, realizing many NGOs struggled for visibility.</p><p>We built this platform as a bigger table, where every NGO has a voice and every supporter finds a cause.</p></section> <section className="cta-banner bg-[#e9ede4] p-10 rounded-lg text-center mb-12"><h2 className="text-3xl font-bold mb-4">Volunteer with HopeWorks Directly</h2><p className="text-lg mb-6">Inspired? Join our core team.</p>{submitted ? (<div className="text-center p-6 bg-white rounded-lg"><h3 className="text-2xl font-bold text-green-600">Thank you!</h3><p>We'll contact you soon.</p></div>) : (<form onSubmit={handleSubmit} className="max-w-lg mx-auto bg-white p-6 rounded-lg text-left space-y-4"><FormInput label="Your Name" type="text" value={name} onChange={e => setName(e.target.value)} required disabled={isLoading}/><FormInput label="Your Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isLoading}/><Button type="submit" variant="primary" disabled={isLoading}>{isLoading ? <><Spinner /> Sending...</> : 'I Want to Join!'}</Button></form>)}</section> <section className="home-campaigns text-center p-8 bg-white rounded-lg border border-gray-300"><h2 className="text-3xl font-bold mb-4">Support Our Work</h2><p className="mb-6">Help us continue our mission. Every contribution makes a difference.</p><Button onClick={() => navigate('donate', {})}>Donate Now</Button></section> </div> );
+            return ( <div> <section className="hero bg-[#e9ede4] p-10 rounded text-center mb-12"><h2 className="text-4xl font-bold mb-4">From a Single Hand to a Thousand Helpers.</h2><p className="text-lg">Our mission: connect impactful NGOs with supporters like you.</p></section> <section className="mb-12 bg-white p-6 rounded border border-gray-300"><h3 className="text-3xl font-bold mb-4">Our Story</h3><p className="mb-4">HopeWorks started small, realizing many NGOs struggled for visibility.</p><p>We built this platform as a bigger table, where every NGO has a voice and every supporter finds a cause.</p></section> <section className="cta-banner bg-[#e9ede4] p-10 rounded text-center mb-12"><h2 className="text-3xl font-bold mb-4">Volunteer with HopeWorks Directly</h2><p className="text-lg mb-6">Inspired? Join our core team.</p>{submitted ? (<div className="text-center p-6 bg-white rounded-lg"><h3 className="text-2xl font-bold text-green-600">Thank you!</h3><p>We'll contact you soon.</p></div>) : (<form onSubmit={handleSubmit} className="max-w-lg mx-auto bg-white p-6 rounded text-left space-y-4"><FormInput label="Your Name" type="text" value={name} onChange={e => setName(e.target.value)} required disabled={isLoading}/><FormInput label="Your Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isLoading}/><Button type="submit" variant="primary" disabled={isLoading}>{isLoading ? <><Spinner /> Sending...</> : 'I Want to Join!'}</Button></form>)}</section> <section className="home-campaigns text-center p-8 bg-white rounded border border-gray-300"><h2 className="text-3xl font-bold mb-4">Support Our Work</h2><p className="mb-6">Help us continue our mission. Every contribution makes a difference.</p><Button onClick={() => navigate('donate', {})}>Donate Now</Button></section> </div> );
         }
 
         // --- ContactPage ---
@@ -368,8 +565,8 @@
                 } catch (err) { console.error('Contact submit fail:', err); if(isMounted.current) setError('Could not connect.'); }
                 finally { if (isMounted.current) setIsLoading(false); }
             };
-            if (submitted) { return (<section className="text-center p-10 bg-white rounded-lg border border-gray-300"><h3 className="text-3xl font-bold text-green-600 mb-4">Thank You!</h3><p className="text-lg">Message sent. We'll reply soon.</p></section>); }
-            return ( <div> <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300"> <h2 className="text-3xl font-bold mb-4">Contact HopeWorks Platform</h2><p className="mb-6">Questions, support, or partnerships? Use the form below.</p> <form onSubmit={handleSubmit} className="space-y-4"> {error && <p className="text-red-600 bg-red-100 p-3 rounded-md">{error}</p>} <FormInput label="Your Name" type="text" value={name} onChange={e => setName(e.target.value)} required disabled={isLoading}/> <FormInput label="Your Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isLoading}/> <FormInput label="Your Message" type="textarea" value={message} onChange={e => setMessage(e.target.value)} required disabled={isLoading}/> <Button type="submit" variant="primary" disabled={isLoading}>{isLoading ? <><Spinner /> Sending...</> : 'Send Message'}</Button> </form> </section> </div> );
+            if (submitted) { return (<section className="text-center p-10 bg-white rounded border border-gray-300"><h3 className="text-3xl font-bold text-green-600 mb-4">Thank You!</h3><p className="text-lg">Message sent. We'll reply soon.</p></section>); }
+            return ( <div> <section className="max-w-xl mx-auto bg-white p-6 rounded border border-gray-300"> <h2 className="text-3xl font-bold mb-4">Contact HopeWorks </h2><p className="mb-6">Questions, support, or partnerships? Use the form below.</p> <form onSubmit={handleSubmit} className="space-y-4"> {error && <p className="text-red-600 bg-red-100 p-3 rounded-md">{error}</p>} <FormInput label="Your Name" type="text" value={name} onChange={e => setName(e.target.value)} required disabled={isLoading}/> <FormInput label="Your Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required disabled={isLoading}/> <FormInput label="Your Message" type="textarea" value={message} onChange={e => setMessage(e.target.value)} required disabled={isLoading}/> <Button type="submit" variant="primary" disabled={isLoading}>{isLoading ? <><Spinner /> Sending...</> : 'Send Message'}</Button> </form> </section> </div> );
         }
 
         // --- RegisterPage ---
@@ -397,8 +594,8 @@
                 } catch (err) { console.error('NGO submit fail:', err); if (isMounted.current) setError('Could not connect.'); }
                 finally { if (isMounted.current) setIsLoading(false); }
             };
-            if (submitted) { return (<section className="text-center p-10 bg-white rounded-lg border border-gray-300"><h3 className="text-3xl font-bold text-green-600 mb-4">Thank You!</h3><p className="text-lg">Registration received. Admin review pending.</p></section>); }
-            return (<div><section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300"><h2 className="text-3xl font-bold mb-4">Join Our Network</h2><p className="mb-6">Register your organization.</p>
+            if (submitted) { return (<section className="text-center p-10 bg-white rounded border border-gray-300"><h3 className="text-3xl font-bold text-green-600 mb-4">Thank You!</h3><p className="text-lg">Registration received. Admin review pending.</p></section>); }
+            return (<div><section className="max-w-xl mx-auto bg-white p-6 rounded border border-gray-300"><h2 className="text-3xl font-bold mb-4">Join Our Network</h2><p className="mb-6">Register your organization.</p>
                 <form onSubmit={handleSubmit} className="registration-form space-y-4">
                     {error && <p className="text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
                     <FormInput label="Organization Name" name="name" type="text" value={formData.name} onChange={handleChange} required disabled={isLoading}/>
@@ -419,7 +616,7 @@
         // --- DonatePage ---
         function DonatePage({ ngo, campaignId }) {
             const [step, setStep] = useState(1);
-            const defaultPayer = ngo?.name || 'HopeWorks Platform';
+            const defaultPayer = ngo?.name || 'HopeWorks ';
             // This default UPI is for the platform itself if no specific NGO is selected
             const defaultUpi = ngo?.upiId || 'Aashishdubey3708-1@okhdfcbank'; 
             const [formData, setFormData] = useState({ name: '', email: '', amount: '500' });
@@ -458,7 +655,7 @@
                         },
                         prefill: { name: formData.name, email: formData.email },
                         notes: { address: `Donation to ${defaultPayer}`, campaign_id: campaignId || 'general', ngo_id: ngo?.id || 'platform' },
-                        theme: { color: "#6B8E23" }
+                        theme: { color: "#005A9C" }
                     };
                     const paymentObject = new window.Razorpay(options);
                     paymentObject.open();
@@ -467,10 +664,10 @@
                 finally { if (isMounted.current) setIsLoading(false); }
             };
             const handleFormSubmit = (e) => { e.preventDefault(); displayRazorpay(); };
-            const handleDownload = () => { const canvas = document.getElementById('ecert-canvas'); const ctx = canvas.getContext('2d'); const name = certName; const todayDate = new Date().toLocaleDateString(); ctx.fillStyle = '#f8f8f0'; ctx.fillRect(0, 0, 800, 500); ctx.fillStyle = '#3D402D'; ctx.font = 'bold 40px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Certificate of Appreciation', 400, 100); ctx.font = '30px system-ui, sans-serif'; ctx.fillText('Proudly Awarded to', 400, 200); ctx.font = 'italic bold 50px system-ui, sans-serif'; ctx.fillText(name, 400, 280); ctx.font = '20px system-ui, sans-serif'; ctx.fillText('For contribution to ' + defaultPayer + ' on ' + todayDate, 400, 400); const link = document.createElement('a'); link.download = 'HopeWorks-Cert.png'; link.href = canvas.toDataURL(); link.click(); };
+            const handleDownload = () => { const canvas = document.getElementById('ecert-canvas'); const ctx = canvas.getContext('2d'); const name = certName; const todayDate = new Date().toLocaleDateString(); ctx.fillStyle = '#f8f8f0'; ctx.fillRect(0, 0, 800, 500); ctx.fillStyle = '#0B2948'; ctx.font = 'bold 40px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Certificate of Appreciation', 400, 100); ctx.font = '30px system-ui, sans-serif'; ctx.fillText('Proudly Awarded to', 400, 200); ctx.font = 'italic bold 50px system-ui, sans-serif'; ctx.fillText(name, 400, 280); ctx.font = '20px system-ui, sans-serif'; ctx.fillText('For contribution to ' + defaultPayer + ' on ' + todayDate, 400, 400); const link = document.createElement('a'); link.download = 'HopeWorks-Cert.png'; link.href = canvas.toDataURL(); link.click(); };
 
             return (
-                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-xl mx-auto bg-white p-6 rounded border border-gray-300">
                     {step === 1 && ( <form onSubmit={handleFormSubmit} className="space-y-4"><h3 className="text-2xl font-bold">Donate to {defaultPayer || 'HopeWorks'}</h3>{paymentError && <p className="text-red-600 bg-red-100 p-3 rounded-md">{paymentError}</p>}<FormInput label="Full Name" name="name" type="text" value={formData.name} onChange={handleChange} required disabled={isLoading}/><FormInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required disabled={isLoading}/><FormInput label="Amount (₹)" name="amount" type="number" value={formData.amount} onChange={handleChange} required min="1" disabled={isLoading}/><Button type="submit" disabled={isLoading}>{isLoading ? <><Spinner /> Processing...</> : 'Proceed to Pay'}</Button></form> )}
                     {step === 2 && ( <div className="text-center"><h4 className="text-2xl font-bold mb-4">Verifying Payment...</h4><div className="spinner"></div><p className="text-gray-600">Please wait, do not close this window.</p></div> )}
                     {step === 3 && ( <div className="text-center"><h3 className="text-2xl font-bold mb-2 text-green-600">Payment Successful!</h3><p className="mb-4">Thank you!</p><h4 className="text-xl font-bold mb-4">Generate Certificate</h4><FormInput label="Name for Certificate" type="text" value={certName} onChange={e => setCertName(e.target.value)} /><canvas id="ecert-canvas" width="800" height="500" className="w-full border border-gray-300 my-4 bg-white"></canvas><Button onClick={handleDownload} variant="primary">Download Certificate</Button></div> )}
@@ -503,7 +700,7 @@
             };
 
             return (
-                <section className="max-w-md mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-md mx-auto bg-white p-6 rounded border border-gray-300">
                     <h2 className="text-3xl font-bold mb-4">Admin Access</h2> <p className="mb-6">Enter password to view dashboard.</p>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
@@ -725,7 +922,7 @@
             };
 
             return (
-                <section className="max-w-md mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-md mx-auto bg-white p-6 rounded border border-gray-300">
                     <h2 className="text-3xl font-bold mb-4">NGO Dashboard Login</h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
@@ -766,7 +963,7 @@
             };
 
             return (
-                <section className="max-w-md mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-md mx-auto bg-white p-6 rounded border border-gray-300">
                     <h2 className="text-3xl font-bold mb-4">Forgot Password</h2>
                     {message ? (
                         <div className="text-green-600 p-3 bg-green-100 rounded-md"><p>{message}</p><Button onClick={() => navigate('ngo-login')} variant="secondary" className="mt-4">Back to Login</Button></div>
@@ -837,11 +1034,11 @@
             };
 
             return (
-                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-xl mx-auto bg-white p-6 rounded border border-gray-300">
                     <form onSubmit={handleUpdate} className="registration-form space-y-4">
                         {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
                         {success && <p className="text-green-600 p-3 bg-green-100 rounded-md">{success}</p>}
-                        <div> <label className="font-bold block mb-1">Organization Logo:</label> {logoPreview && <img src={logoPreview} alt="Logo Preview" className="image-preview mb-2"/>} <input type="file" name="logo" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#6B8E23] hover:file:bg-violet-100" disabled={isLoading || isDeactivating}/> <span className="text-xs text-gray-500 block mt-1">Upload new logo (max 5MB). Leave blank to keep current.</span> </div>
+                        <div> <label className="font-bold block mb-1">Organization Logo:</label> {logoPreview && <img src={logoPreview} alt="Logo Preview" className="image-preview mb-2"/>} <input type="file" name="logo" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#005A9C] hover:file:bg-violet-100" disabled={isLoading || isDeactivating}/> <span className="text-xs text-gray-500 block mt-1">Upload new logo (max 5MB). Leave blank to keep current.</span> </div>
                         <FormInput label="Org Name" name="name" type="text" value={ngo.name} onChange={handleChange} required disabled={isLoading || isDeactivating}/>
                         <FormInput label="Email" name="email" type="email" value={ngo.email} disabled hint="Cannot change email."/>
                         <FormInput label="Address" name="address" type="textarea" value={ngo.address || ''} onChange={handleChange} required disabled={isLoading || isDeactivating}/>
@@ -882,7 +1079,7 @@
                 finally { if (isMounted.current) setIsLoading(false); }
             };
             return (
-                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-xl mx-auto bg-white p-6 rounded border border-gray-300">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <h3 className="text-2xl font-bold mb-4">Create New Event</h3>
                         {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
@@ -916,7 +1113,7 @@
                 finally { if (isMounted.current) setIsLoading(false); }
             };
             return (
-                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-xl mx-auto bg-white p-6 rounded border border-gray-300">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <h3 className="text-2xl font-bold mb-4">Add News Article</h3>
                         {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
@@ -956,7 +1153,7 @@
                 finally { if (isMounted.current) setIsLoading(false); }
             };
             return (
-                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-xl mx-auto bg-white p-6 rounded border border-gray-300">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <h3 className="text-2xl font-bold mb-4">Create New Campaign</h3>
                         {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
@@ -965,7 +1162,7 @@
                          <div>
                             <label className="font-bold block mb-1">Campaign Image:</label>
                             {imagePreview && <img src={imagePreview} alt="Preview" className="campaign-image-preview mb-2"/>}
-                            <input type="file" name="campaignImage" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#6B8E23] hover:file:bg-violet-100" disabled={isLoading}/>
+                            <input type="file" name="campaignImage" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#005A9C] hover:file:bg-violet-100" disabled={isLoading}/>
                             <span className="text-xs text-gray-500 block mt-1">Upload image (max 5MB) or provide URL below.</span>
                          </div>
                          <FormInput label="Or Image URL (Fallback)" name="imageUrl" type="text" value={formData.imageUrl} onChange={handleTextChange} hint="e.g., https://placehold.co/600x400" disabled={isLoading}/>
@@ -1047,7 +1244,7 @@
 
             return (
                 <div className="space-y-8">
-                    <section className="bg-white p-6 rounded-lg border border-gray-300">
+                    <section className="bg-white p-6 rounded border border-gray-300">
                         <h3 className="text-2xl font-bold mb-4">Manage Campaigns</h3>
                         {Array.isArray(myCampaigns) && myCampaigns.length > 0 ? (
                             <ul className="space-y-3">
@@ -1067,7 +1264,7 @@
                         ) : (<p>You have not created any campaigns yet.</p>)}
                     </section>
 
-                    <section className="bg-white p-6 rounded-lg border border-gray-300">
+                    <section className="bg-white p-6 rounded border border-gray-300">
                         <h3 className="text-2xl font-bold mb-4">Manage Events</h3>
                         {Array.isArray(myEvents) && myEvents.length > 0 ? (
                             <ul className="space-y-3">
@@ -1087,7 +1284,7 @@
                         ) : (<p>You have not created any events yet.</p>)}
                     </section>
 
-                    <section className="bg-white p-6 rounded-lg border border-gray-300">
+                    <section className="bg-white p-6 rounded border border-gray-300">
                         <h3 className="text-2xl font-bold mb-4">Manage News</h3>
                         {Array.isArray(myNews) && myNews.length > 0 ? (
                             <ul className="space-y-3">
@@ -1143,13 +1340,13 @@
             const totalDonations = Array.isArray(donations) ? donations.reduce((acc, curr) => acc + curr.amount, 0) : 0;
 
             return (
-                <section className="bg-white p-6 rounded-lg border border-gray-300">
+                <section className="bg-white p-6 rounded border border-gray-300">
                     <h3 className="text-2xl font-bold mb-4">Donation History</h3>
                     {loading && <p>Loading donations...</p>}
                     {error && <p className="text-red-600">{error}</p>}
                     {!loading && !error && (
                         <>
-                            <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-6">
+                            <div className="bg-green-50 border border-green-200 p-4 rounded mb-6">
                                 <p className="text-lg font-bold text-green-800">
                                     Total Received: ₹{totalDonations.toLocaleString('en-IN')}
                                 </p>
@@ -1246,7 +1443,7 @@
             if (isLoading && !formData.title) return <p className="text-center">Loading event editor...</p>;
 
             return (
-                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-xl mx-auto bg-white p-6 rounded border border-gray-300">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <h3 className="text-2xl font-bold mb-4">Edit Event</h3>
                         {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
@@ -1312,7 +1509,7 @@
             if (isLoading && !formData.title) return <p className="text-center">Loading news editor...</p>;
 
             return (
-                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-xl mx-auto bg-white p-6 rounded border border-gray-300">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <h3 className="text-2xl font-bold mb-4">Edit News Article</h3>
                         {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
@@ -1391,7 +1588,7 @@
             if (isLoading && !formData.title) return <p className="text-center">Loading campaign editor...</p>;
 
             return (
-                <section className="max-w-xl mx-auto bg-white p-6 rounded-lg border border-gray-300">
+                <section className="max-w-xl mx-auto bg-white p-6 rounded border border-gray-300">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <h3 className="text-2xl font-bold mb-4">Edit Campaign</h3>
                         {error && <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>}
@@ -1400,7 +1597,7 @@
                          <div>
                             <label className="font-bold block mb-1">Campaign Image:</label>
                             {imagePreview && <img src={imagePreview} alt="Preview" className="campaign-image-preview mb-2"/>}
-                            <input type="file" name="campaignImage" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#6B8E23] hover:file:bg-violet-100" disabled={isLoading}/>
+                            <input type="file" name="campaignImage" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-[#005A9C] hover:file:bg-violet-100" disabled={isLoading}/>
                             <span className="text-xs text-gray-500 block mt-1">Upload new image (max 5MB). Leave blank to keep current.</span>
                          </div>
                         <FormInput 
@@ -1479,7 +1676,7 @@
                 switch (dashboardView) {
                     case 'main':
                         return (
-                            <div className="bg-white p-6 rounded-lg border border-gray-300">
+                            <div className="bg-white p-6 rounded border border-gray-300">
                                 <div className="flex flex-col sm:flex-row items-center gap-6">
                                     <img src={getImageUrl(ngo.logo)} alt="Logo" className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"/>
                                     <div>
@@ -1570,10 +1767,10 @@
             useEffect(() => { const fetchCampaigns = fetch(API_URL + '/campaigns').then(res => res.ok ? res.json() : Promise.reject('Fail campaign fetch')); const fetchNgos = fetch(API_URL + '/ngos').then(res => res.ok ? res.json() : Promise.reject('Fail NGO fetch')); Promise.all([fetchCampaigns, fetchNgos]).then(([campaignData, ngoData]) => { setCampaigns(campaignData); setAllNgos(ngoData); setLoading(false); }).catch(err => { console.error("Failed campaigns page data:", err); setError('Could not load.'); setLoading(false); }); }, []);
             return (
                  <div>
-                    <section className="hero bg-[#e9ede4] p-10 rounded-lg text-center mb-12"><h2 className="text-4xl font-bold mb-4">All Active Campaigns</h2><p className="text-lg">Support ongoing projects.</p></section>
+                    <section className="hero bg-[#e9ede4] p-10 rounded text-center mb-12"><h2 className="text-4xl font-bold mb-4">All Active Campaigns</h2><p className="text-lg">Support ongoing projects.</p></section>
                     <section className="campaign-list space-y-8">
                         {loading && <p className="text-center">Loading...</p>} {error && <p className="text-center text-red-600">{error}</p>}
-                        {!loading && !error && ( Array.isArray(campaigns) && campaigns.length > 0 ? ( <div className="grid md:grid-cols-2 gap-8"> {campaigns.map(campaign => { const progressPercent = campaign.goalAmount > 0 ? Math.min(100, Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)) : 0; const hostingNgo = findNgoByName(allNgos, campaign.host); return ( <article key={campaign.id} className="campaign-card text-left bg-white p-6 rounded-lg border border-gray-300 flex flex-col"><img src={getImageUrl(campaign.imageUrl)} alt={campaign.title} className="w-full h-48 object-cover rounded-lg mb-4" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x400/eee/aaa?text=Error'; }}/><h3 className="text-2xl font-bold">{campaign.title}</h3><p className="text-sm text-gray-600 mb-2">by {campaign.host}</p><p className="my-2 flex-grow">{campaign.description}</p><div className="progress-bar mt-auto"><div className="progress" style={{width: `${progressPercent}%`}}></div></div><p className="progress-text"><strong>₹{(campaign.raisedAmount || 0).toLocaleString('en-IN')}</strong> raised of ₹{campaign.goalAmount.toLocaleString('en-IN')} goal</p>
+                        {!loading && !error && ( Array.isArray(campaigns) && campaigns.length > 0 ? ( <div className="grid md:grid-cols-2 gap-8"> {campaigns.map(campaign => { const progressPercent = campaign.goalAmount > 0 ? Math.min(100, Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)) : 0; const hostingNgo = findNgoByName(allNgos, campaign.host); return ( <article key={campaign.id} className="campaign-card premium-card flex flex-col"><img src={getImageUrl(campaign.imageUrl)} alt={campaign.title} className="w-full h-48 object-cover rounded mb-4" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/600x400/eee/aaa?text=Error'; }}/><h3 className="text-2xl font-bold">{campaign.title}</h3><p className="text-sm text-gray-600 mb-2">by {campaign.host}</p><p className="my-2 flex-grow">{campaign.description}</p><div className="progress-bar mt-auto"><div className="progress" style={{width: `${progressPercent}%`}}></div></div><p className="progress-text"><strong>₹{(campaign.raisedAmount || 0).toLocaleString('en-IN')}</strong> raised of ₹{campaign.goalAmount.toLocaleString('en-IN')} goal</p>
                             <Button onClick={() => navigate('donate', { ngo: hostingNgo, campaignId: campaign.id })} variant="primary" className="mt-4 w-full" disabled={!hostingNgo}>Donate to {campaign.host}</Button>
                             {!hostingNgo && <p className="text-xs text-red-500 mt-1 text-center">Donation link unavailable</p>}
                         </article> ); })} </div> ) : (<p className="text-center col-span-full">No active campaigns.</p>) )}
@@ -1589,8 +1786,8 @@
             const renderPage = () => {
                 const pageId = page.id;
                 switch (page.name) {
-                    case 'home': return <HomePage />;
-                    case 'ngos': return <NgoListPage />;
+                   case 'home': return <HomePage />;
+                    case 'ngos': return <NgoListPage initialSearch={page.initialSearch} />;
                     case 'profile': return <ProfilePage ngoId={pageId} />;
                     case 'events': return <EventsPage />;
                     case 'news': return <NewsPage />;
