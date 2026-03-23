@@ -229,7 +229,7 @@ app.post('/api/ngos/register', async (req, res) => {
             website, logo, darpanId, phone, address 
         } = req.body;
 
-        const existingNgo = await NGO.findOne({ email });
+        const existingNgo = await Ngo.findOne({ email: email.toLowerCase() });
         if (existingNgo) {
             return res.status(400).json({ message: 'An NGO with this email already exists.' });
         }
@@ -241,7 +241,7 @@ app.post('/api/ngos/register', async (req, res) => {
 
         const finalLogo = logo || 'https://placehold.co/100x100/777/FFF?text=' + name.substring(0,2).toUpperCase();
 
-        const newNgo = new NGO({
+        const newNgo = new Ngo({
             name, email, password, cause, description, 
             website, logo: finalLogo, darpanId, 
             phone: phone || '', address, latitude, longitude,
