@@ -220,47 +220,61 @@ app.post("/api/contact", async (req, res) => {
 // --- NGO Endpoints ---
 
 // Register a new NGO
-app.post("/api/ngos", async (req, res) => {
- const { name, email, cause, description, password, address, phone } = req.body;
- if (!name || !email || !cause || !password || !address ) {
-   return res.status(400).json({ message: 'Missing required fields' });
- }
+app.post('/api/ngos/register', async (req, res) => {
+    try {
+        // 1. Grab ALL the data from the frontend
+        const { 
+            name, email, password, cause, description, 
+            website, logo, darpanId, phone, address 
+        } = req.body;
 
- try {
-    const existingNgo = await Ngo.findOne({ email: email.toLowerCase() });
-    if (existingNgo) {
-         return res.status(400).json({ message: 'This email is already registered.' });
-    }
+        // 2. Check if the email is already taken
+        const existingNgo = await NGO.findOne({ email }); // Make sure your model is imported as 'NGO'
+        if (existingNgo) {
+            return res.status(400).json({ message: 'An NGO with this email already exists.' });
+        }
 
-    // TODO: Implement real geocoding from 'address' if needed
-    let latitude = 20.5937; let longitude = 78.9629;
-    if (address.toLowerCase().includes('mumbai')) { latitude = 19.0760; longitude = 72.8777; }
-    else if (address.toLowerCase().includes('delhi')) { latitude = 28.6139; longitude = 77.2090; }
-    else if (address.toLowerCase().includes('bengal')) { latitude = 22.5726; longitude = 88.3639; }
+        // 3. Apply Geocoding based on address
+        let latitude = 20.5937; let longitude = 78.9629; // Default India center
+        if (address && address.toLowerCase().includes('mumbai')) { latitude = 19.0760; longitude = 72.8777; }
+        else if (address && address.toLowerCase().includes('delhi')) { latitude = 28.6139; longitude = 77.2090; }
+        else if (address && address.toLowerCase().includes('bengal')) { latitude = 22.5726; longitude = 88.3639; }
 
-    // Password will be hashed by pre-save hook
-    const newNgo = new Ngo({
-       name, email, cause, description,
-       password: password,
-       address, phone: phone || '',
-       latitude, longitude,
-       logo: 'https://placehold.co/100x100/777/FFF?text=' + name.substring(0,2).toUpperCase(),
-       status: 'pending' // Default status
-     });
+        // 4. Generate a default logo if they didn't provide one
+        const finalLogo = logo || 'https://placehold.co/100x100/777/FFF?text=' + name.substring(0,2).toUpperCase();
 
-    await newNgo.save();
-    console.log("New Pending NGO Saved:", newNgo.email);
-    res.status(201).json({ message: 'NGO registration received! Awaiting admin approval.' });
+        // 5. Build the new NGO object
+        const newNgo = new NGO({
+            name, 
+            email, 
+            password, // Assuming you have a pre-save hook in your schema to hash this!
+            cause, 
+            description, 
+            website, 
+            logo: finalLogo, 
+            darpanId, 
+            phone: phone || '', 
+            address,
+            latitude, 
+            longitude,
+            status: 'pending' // Admin must review
+        });
 
- } catch(err) {
-    console.error("Error registering NGO:", err);
-     if (err.name === 'ValidationError') {
-       return res.status(400).json({ message: 'Validation failed', errors: err.errors });
-     }
-    res.status(500).json({ message: "Failed to register NGO" });
- }
+        // 6. Save to database
+        await newNgo.save();
+        console.log("New Pending NGO Saved:", newNgo.email);
+        
+        // 7. Hang up and tell React it worked!
+        res.status(201).json({ message: 'Registration successful! Awaiting admin approval.', ngoId: newNgo._id });
+
+    } catch (err) {
+        console.error("Error registering NGO:", err);
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ message: 'Validation failed', errors: err.errors });
+        }
+        res.status(500).json({ message: 'Server error during registration.' });
+    }
 });
-
 // Get all approved NGOs
 app.get("/api/ngos", async (req, res) => {
     try {
