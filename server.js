@@ -222,49 +222,32 @@ app.post("/api/contact", async (req, res) => {
 // Register a new NGO
 app.post('/api/ngos/register', async (req, res) => {
     try {
-        // 1. Grab ALL the data from the frontend
         const { 
             name, email, password, cause, description, 
             website, logo, darpanId, phone, address 
         } = req.body;
 
-        // 2. Check if the email is already taken
-        const existingNgo = await NGO.findOne({ email }); // Make sure your model is imported as 'NGO'
+        const existingNgo = await NGO.findOne({ email });
         if (existingNgo) {
             return res.status(400).json({ message: 'An NGO with this email already exists.' });
         }
 
-        // 3. Apply Geocoding based on address
-        let latitude = 20.5937; let longitude = 78.9629; // Default India center
+        let latitude = 20.5937; let longitude = 78.9629; 
         if (address && address.toLowerCase().includes('mumbai')) { latitude = 19.0760; longitude = 72.8777; }
         else if (address && address.toLowerCase().includes('delhi')) { latitude = 28.6139; longitude = 77.2090; }
         else if (address && address.toLowerCase().includes('bengal')) { latitude = 22.5726; longitude = 88.3639; }
 
-        // 4. Generate a default logo if they didn't provide one
         const finalLogo = logo || 'https://placehold.co/100x100/777/FFF?text=' + name.substring(0,2).toUpperCase();
 
-        // 5. Build the new NGO object
         const newNgo = new NGO({
-            name, 
-            email, 
-            password, // Assuming you have a pre-save hook in your schema to hash this!
-            cause, 
-            description, 
-            website, 
-            logo: finalLogo, 
-            darpanId, 
-            phone: phone || '', 
-            address,
-            latitude, 
-            longitude,
-            status: 'pending' // Admin must review
+            name, email, password, cause, description, 
+            website, logo: finalLogo, darpanId, 
+            phone: phone || '', address, latitude, longitude,
+            status: 'pending' 
         });
 
-        // 6. Save to database
         await newNgo.save();
-        console.log("New Pending NGO Saved:", newNgo.email);
         
-        // 7. Hang up and tell React it worked!
         res.status(201).json({ message: 'Registration successful! Awaiting admin approval.', ngoId: newNgo._id });
 
     } catch (err) {
@@ -275,6 +258,7 @@ app.post('/api/ngos/register', async (req, res) => {
         res.status(500).json({ message: 'Server error during registration.' });
     }
 });
+
 // Get all approved NGOs
 app.get("/api/ngos", async (req, res) => {
     try {
