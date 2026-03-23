@@ -73,21 +73,23 @@ const razorpayInstance = new Razorpay({ key_id: RAZORPAY_KEY_ID, key_secret: RAZ
 // --- Mongoose Schemas & Models ---
 // NGO Schema
 const ngoSchema = new mongoose.Schema({
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, trim: true, lowercase: true, index: true },
-    password: { type: String, required: true },
-    cause: { type: String, required: true, trim: true },
-    description: { type: String, default: 'No description provided.', trim: true },
-    logo: { type: String, default: '' }, // This will store the Cloudinary URL
-    status: { type: String, enum: ['pending', 'approved', 'deactivated'], default: 'pending' },
-    upiId: { type: String, default: '', trim: true },
-    address: { type: String, required: true, trim: true },
-    phone: { type: String, default: '', trim: true },
-    latitude: { type: Number },
-    longitude: { type: Number },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
-});
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    cause: { type: String, required: true },
+    description: { type: String, required: true },
+    
+    // --- ADD THESE 4 LINES TO YOUR SCHEMA ---
+    darpanId: { type: String, required: true }, 
+    address: { type: String, required: true },
+    phone: { type: String, default: '' },
+    website: { type: String, default: '' },
+    
+    logo: { type: String, default: '' },
+    latitude: { type: Number },
+    longitude: { type: Number },
+    status: { type: String, default: 'pending' }
+}, { timestamps: true });
 // Middleware to hash password before saving
 ngoSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
