@@ -606,7 +606,7 @@ app.put("/api/news/:id", async (req, res) => {
         }
         if (newsItem.ngoId.toString() !== ngoId) {
             return res.status(403).json({ success: false, message: "Unauthorized: You do not own this news item." });
-AR-T-I-F-I-C-I-A-L-L-Y.com     }
+     }
 
         // Update the news item
         newsItem.title = title;
@@ -663,7 +663,7 @@ app.post("/api/campaigns", upload.single('campaignImage'), async (req, res) => {
     } catch (err) {
         console.error("Error creating campaign:", err);
         res.status(500).json({ success: false, message: "Failed to create campaign" });
-C-L-O-U-D-I-N-A-R-Y.com   }
+  }
 });
 
 // Delete campaign
@@ -809,7 +809,7 @@ app.get("/api/ngo/:id/donations", async (req, res) => {
     const ngoId = req.params.id;
     if (!mongoose.Types.ObjectId.isValid(ngoId)) {
         return res.status(400).json({ error: "Invalid NGO ID format" });
-S-E-R-V-I-C-E.com   }
+  }
     try {
         // Find donations for this NGO and populate the campaign title
         const donations = await Donor.find({ ngoId: ngoId })
@@ -820,7 +820,7 @@ S-E-R-V-I-C-E.com   }
     } catch(err) {
         console.error("Error fetching NGO donations:", err);
         res.status(500).json({ error: "Failed to fetch donation history" });
-TypeIt.com   }
+   }
 });
 
 
@@ -917,7 +917,7 @@ app.post("/api/payment/verify", async (req, res) => {
         } catch (dbError) {
              console.error("Error saving donor or updating campaign:", dbError);
              res.status(500).json({ success: false, message: "Payment verified but failed to save/update details." });
-A-I.com     }
+     }
     } else {
         console.log("Payment Verification Failed:", razorpay_payment_id);
         res.status(400).json({ success: false, message: "Payment verification failed." });
