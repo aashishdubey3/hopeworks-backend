@@ -18,7 +18,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// 📝 1. REGISTER (Now sends an email instead of instantly logging in)
+// 📝 1. REGISTER
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -59,6 +59,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({ message: "Registration successful! Please check your email to verify your account." });
   } catch (error) {
+    console.error("🚨 Registration Error:", error); // <-- FORCES RENDER TO PRINT THE ERROR
     res.status(500).json({ message: "Registration failed. Server error." });
   }
 });
@@ -75,11 +76,12 @@ router.get('/verify/:token', async (req, res) => {
 
     res.status(200).json({ message: "Account verified successfully! You may now log in." });
   } catch (error) {
+    console.error("🚨 Verification Error:", error);
     res.status(500).json({ message: "Verification failed." });
   }
 });
 
-// 🚪 3. LOGIN (Now rejects unverified users)
+// 🚪 3. LOGIN
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -103,15 +105,16 @@ router.post('/login', async (req, res) => {
 
     res.status(200).json({ token, user: userObject });
   } catch (error) {
+    console.error("🚨 Login Error:", error);
     res.status(500).json({ message: "Login failed." });
   }
 });
 
-// 🔑 4. FORGOT PASSWORD (Send Reset Link)
+// 🔑 4. FORGOT PASSWORD
 router.post('/forgot-password', async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.status(404).json({ message: "If that email exists, a reset link has been sent." }); // Obscure if email exists for security
+    if (!user) return res.status(404).json({ message: "If that email exists, a reset link has been sent." });
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = resetToken;
@@ -135,16 +138,17 @@ router.post('/forgot-password', async (req, res) => {
 
     res.status(200).json({ message: "If that email exists, a reset link has been sent." });
   } catch (error) {
+    console.error("🚨 Forgot Password Error:", error); // <-- FORCES RENDER TO PRINT THE ERROR
     res.status(500).json({ message: "Server error." });
   }
 });
 
-// 🛠️ 5. RESET PASSWORD (Save the new password)
+// 🛠️ 5. RESET PASSWORD
 router.post('/reset-password/:token', async (req, res) => {
   try {
     const user = await User.findOne({ 
       resetPasswordToken: req.params.token, 
-      resetPasswordExpires: { $gt: Date.now() } // Ensure token hasn't expired
+      resetPasswordExpires: { $gt: Date.now() } 
     });
 
     if (!user) return res.status(400).json({ message: "Password reset link is invalid or has expired." });
@@ -156,6 +160,7 @@ router.post('/reset-password/:token', async (req, res) => {
 
     res.status(200).json({ message: "Password successfully reset! You can now log in." });
   } catch (error) {
+    console.error("🚨 Reset Password Error:", error);
     res.status(500).json({ message: "Failed to reset password." });
   }
 });
