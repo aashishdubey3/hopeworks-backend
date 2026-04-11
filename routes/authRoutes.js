@@ -56,6 +56,14 @@ router.post('/register', async (req, res) => {
         </div>
       `
     });
+    // 🔥 ADD THIS VERIFICATION BLOCK RIGHT HERE:
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("🚨 SMTP CONNECTION FAILED:", error);
+  } else {
+    console.log("✅ SMTP Server is ready to take our messages");
+  }
+});
 
     res.status(201).json({ message: "Registration successful! Please check your email to verify your account." });
   } catch (error) {
