@@ -4,21 +4,52 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
 const User = require('../models/User');
 
-// 📧 Configure the Email Sender
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
+// 📧 1. Setup Google OAuth2 Engine
+const OAuth2 = google.auth.OAuth2;
+const oauth2Client = new OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  "https://developers.google.com/oauthplayground"
+);
+
+oauth2Client.setCredentials({
+  refresh_token: process.env.GOOGLE_REFRESH_TOKEN
 });
 
-// 📝 1. REGISTER
+// 📧 2. Build the Transporter Generator
+const createTransporter = async () => {
+  try {
+    const accessToken = await new Promise((resolve, reject) => {
+      oauth2Client.getAccessToken((err, token) => {
+        if (err) {
+          console.error("🚨 Failed to generate access token:", err);
+          reject(err);
+        }
+        resolve(token);
+      });
+    });
+
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: process.env.EMAIL_USER,
+        accessToken,
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        refreshToken: process.env.GOOGLE_REFRESH_TOKEN
+      }
+    });
+  } catch (error) {
+    console.error("🚨 Transporter Error:", error);
+    return null;
+  }
+};
+
+// 📝 3. REGISTER
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -27,8 +58,6 @@ router.post('/register', async (req, res) => {
     if (existingUser) return res.status(400).json({ message: "A scholar with this email already exists." });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Generate a random 64-character token
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
     const newUser = new User({
@@ -41,9 +70,12 @@ router.post('/register', async (req, res) => {
 
     await newUser.save();
 
-    // Send the Verification Email
+    // 🔥 Send Email via Google API
+    const emailTransporter = await createTransporter();
+    if (!emailTransporter) throw new Error("Could not create email transporter");
+
     const verifyLink = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
-    await transporter.sendMail({
+    await emailTransporter.sendMail({
       from: `"The Lantern Library" <${process.env.EMAIL_USER}>`,
       to: newUser.email,
       subject: "Welcome Scholar - Verify Your Archives",
@@ -56,30 +88,22 @@ router.post('/register', async (req, res) => {
         </div>
       `
     });
-    // 🔥 ADD THIS VERIFICATION BLOCK RIGHT HERE:
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("🚨 SMTP CONNECTION FAILED:", error);
-  } else {
-    console.log("✅ SMTP Server is ready to take our messages");
-  }
-});
 
     res.status(201).json({ message: "Registration successful! Please check your email to verify your account." });
   } catch (error) {
-    console.error("🚨 Registration Error:", error); // <-- FORCES RENDER TO PRINT THE ERROR
+    console.error("🚨 Registration Error:", error);
     res.status(500).json({ message: "Registration failed. Server error." });
   }
 });
 
-// ✅ 2. VERIFY EMAIL
+// ✅ 4. VERIFY EMAIL
 router.get('/verify/:token', async (req, res) => {
   try {
     const user = await User.findOne({ verificationToken: req.params.token });
     if (!user) return res.status(400).json({ message: "Invalid or expired verification link." });
 
     user.isVerified = true;
-    user.verificationToken = undefined; // Clear the token
+    user.verificationToken = undefined;
     await user.save();
 
     res.status(200).json({ message: "Account verified successfully! You may now log in." });
@@ -89,7 +113,7 @@ router.get('/verify/:token', async (req, res) => {
   }
 });
 
-// 🚪 3. LOGIN
+// 🚪 5. LOGIN
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -100,14 +124,12 @@ router.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials." });
 
-    // 🔥 THE NEW GUARDRAIL
     if (!user.isVerified) {
       return res.status(403).json({ message: "Please verify your email before entering the archives." });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
-    // Strip password before sending to frontend
     const userObject = user.toObject();
     delete userObject.password;
 
@@ -118,7 +140,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 🔑 4. FORGOT PASSWORD
+// 🔑 6. FORGOT PASSWORD
 router.post('/forgot-password', async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -126,12 +148,14 @@ router.post('/forgot-password', async (req, res) => {
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 Hour limit
+    user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
 
+    const emailTransporter = await createTransporter();
+    if (!emailTransporter) throw new Error("Could not create email transporter");
+
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    
-    await transporter.sendMail({
+    await emailTransporter.sendMail({
       from: `"The Lantern Library" <${process.env.EMAIL_USER}>`,
       to: user.email,
       subject: "Password Reset Request",
@@ -146,12 +170,12 @@ router.post('/forgot-password', async (req, res) => {
 
     res.status(200).json({ message: "If that email exists, a reset link has been sent." });
   } catch (error) {
-    console.error("🚨 Forgot Password Error:", error); // <-- FORCES RENDER TO PRINT THE ERROR
+    console.error("🚨 Forgot Password Error:", error);
     res.status(500).json({ message: "Server error." });
   }
 });
 
-// 🛠️ 5. RESET PASSWORD
+// 🛠️ 7. RESET PASSWORD
 router.post('/reset-password/:token', async (req, res) => {
   try {
     const user = await User.findOne({ 
